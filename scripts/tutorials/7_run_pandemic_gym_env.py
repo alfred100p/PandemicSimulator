@@ -25,8 +25,13 @@ def run_pandemic_gym_env() -> None:
 
     # run stage-0 action steps in the environment
     env.reset()
-    for _ in trange(100, desc='Simulating day'):
-        obs, reward, done, aux = env.step(action=0)  # here the action is the discrete regulation stage identifier
+    for i in trange(100, desc='Simulating day'):
+        obs, reward, done, aux = env.step(action=0) 
+        print(obs.global_infection_summary)
+        if i==5:
+            print('fred')
+            print(obs)
+            exit() # here the action is the discrete regulation stage identifier
         viz.record((obs, reward))
 
     # generate plots

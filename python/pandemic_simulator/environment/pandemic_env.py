@@ -128,9 +128,10 @@ class PandemicGymEnv(gym.Env):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
         # execute the action if different from the current stage
-        if action != self._last_observation.stage[-1, 0, 0]:  # stage has a TNC layout
-            regulation = self._stage_to_regulation[action]
-            self._pandemic_sim.impose_regulation(regulation=regulation)
+        #if action != self._last_observation.stage[-1,0,0]:  # stage has a TNC layout
+            #print(self._last_observation.stage[-1, 0, 0])
+        regulation = self._stage_to_regulation[min(4,max(0,action+self._last_observation.stage[-1, 0, 0]))]
+        self._pandemic_sim.impose_regulation(regulation=regulation)
 
         # update the sim until next regulation interval trigger and construct obs from state hist
         obs = PandemicObservation.create_empty(
@@ -142,6 +143,7 @@ class PandemicGymEnv(gym.Env):
         for i in range(self._sim_steps_per_regulation):
             # step sim
             self._pandemic_sim.step()
+            
 
             # store only the last self._history_size state values
             if i >= (self._sim_steps_per_regulation - self._obs_history_size):
