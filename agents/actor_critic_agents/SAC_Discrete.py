@@ -58,6 +58,18 @@ class SAC_Discrete(SAC):
         self.add_extra_noise = False
         self.do_evaluation_iterations = self.hyperparameters["do_evaluation_iterations"]
 
+    def locally_save_policy(self):
+        """Saves the policy"""
+        torch.save(self.critic_local.state_dict(), "Models/{}critic_local_network.pt".format(self.agent_name))
+        torch.save(self.critic_local_2.state_dict(), "Models/{}critic_local_network2.pt".format(self.agent_name))
+        torch.save(self.critic_optimizer.state_dict(), "Models/{}critic_optimizer_network.pt".format(self.agent_name))
+        torch.save(self.critic_optimizer_2.state_dict(), "Models/{}critic_optimizer_network.pt".format(self.agent_name))
+        torch.save(self.critic_target.state_dict(), "Models/{}critic_target.pt".format(self.agent_name))
+        torch.save(self.critic_target_2.state_dict(), "Models/{}critic_target2.pt".format(self.agent_name))
+        torch.save(self.actor_local.state_dict(), "Models/{}actor_local_network.pt".format(self.agent_name))
+        torch.save(self.actor_optimizer.state_dict(), "Models/{}actor_optimizer_network.pt".format(self.agent_name))
+
+
     def produce_action_and_action_info(self, state):
         """Given the state, produces an action, the probability of the action, the log probability of the action, and
         the argmax action"""
@@ -100,3 +112,4 @@ class SAC_Discrete(SAC):
         policy_loss = (action_probabilities * inside_term).sum(dim=1).mean()
         log_action_probabilities = torch.sum(log_action_probabilities * action_probabilities, dim=1)
         return policy_loss, log_action_probabilities
+    

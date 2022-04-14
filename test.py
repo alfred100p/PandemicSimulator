@@ -20,6 +20,7 @@ from python.pandemic_simulator.environment.pandemic_env import PandemicGymEnvWra
 from tqdm import trange
 
 import pandemic_simulator as ps
+import random
 
 
 
@@ -45,7 +46,7 @@ def run_pandemic_gym_env() -> None:
     # generate plots
     viz.plot()
 
-ps.init_globals(seed=0)
+ps.init_globals(seed=random.randint(30,100000))
 sim_config = ps.sh.small_town_config
 
 viz = ps.viz.GymViz.from_config(sim_config=sim_config)
@@ -56,7 +57,7 @@ p_env=  PandemicGymEnvWrapper(env=env,warmup=True)
 config = Config()
 config.seed = 1
 config.environment = p_env
-config.num_episodes_to_run = 1
+config.num_episodes_to_run = 1000
 config.file_to_save_data_results = "results/data_and_graphs/PandemicSim_Results_Data.pkl"
 config.file_to_save_results_graph = "results/data_and_graphs/PandemicSim_Results_Graph.png"
 config.show_solution_score = False
@@ -138,7 +139,7 @@ config.hyperparameters = {
             "initialiser": "Xavier"
         },
 
-        "min_steps_before_learning": 10,
+        "min_steps_before_learning": 1200,
         "batch_size": 16,
         "discount_rate": 0.99,
         "mu": 0.0, #for O-H noise

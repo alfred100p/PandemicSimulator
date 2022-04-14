@@ -1,3 +1,4 @@
+import random
 from agents.Base_Agent import Base_Agent
 from utilities.OU_Noise import OU_Noise
 from utilities.data_structures.Replay_Buffer import Replay_Buffer
@@ -81,6 +82,7 @@ class SAC(Base_Agent):
 
     def reset_game(self):
         """Resets the game information so we are ready to play a new episode"""
+        ps.init_globals(seed=random.randint(30,100000))
         Base_Agent.reset_game(self)
         if self.add_extra_noise: self.noise.reset()
         self.viz=self.viz.reset()
@@ -89,7 +91,7 @@ class SAC(Base_Agent):
         """Runs an episode on the game, saving the experience and running a learning step if appropriate"""
         eval_ep = self.episode_number % TRAINING_EPISODES_PER_EVAL_EPISODE == 0 and self.do_evaluation_iterations
         self.episode_step_number_val = 0
-        while not (self.done or self.episode_step_number_val>11):
+        while not (self.done or self.episode_step_number_val>119):
             self.episode_step_number_val += 1
             self.action,rnd = self.pick_action(eval_ep)
             self.conduct_action(self.action,rnd)
@@ -110,8 +112,10 @@ class SAC(Base_Agent):
         if self.episode_number%10==0:
             self.qviz.saveQ()
         if eval_ep: self.print_summary_of_latest_evaluation_episode()
+        
+        if self.episode_number %50 < 10:
+            self.viz.save()
         self.episode_number += 1
-        self.viz.save()
         
 
 
