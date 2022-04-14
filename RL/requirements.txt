@@ -1,0 +1,7 @@
+numpy
+torch
+matplotlib
+PyVirtualDisplay
+gym
+nn_builder
+tensorflow
