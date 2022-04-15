@@ -1,11 +1,12 @@
 # Confidential, Copyright 2020, Sony Corporation of America, All rights reserved.
 
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, UserString
 from itertools import product as cartesianproduct, combinations
 from typing import DefaultDict, Dict, List, Optional, Sequence, cast, Type
 
 import numpy as np
 from orderedset import OrderedSet
+from pygame import VIDEORESIZE
 
 from .contact_tracing import MaxSlotContactTracer
 from .infection_model import SEIRModel, SpreadProbabilityParams
@@ -19,11 +20,15 @@ from .pandemic_testing_strategies import RandomPandemicTesting
 from .simulator_config import PandemicSimConfig
 from .simulator_opts import PandemicSimOpts
 
+
+#from ..viz import GymViz
+
+
 __all__ = ['PandemicSim', 'make_locations']
 
 
-def make_locations(sim_config: PandemicSimConfig) -> List[Location]:
-    return [config.location_type(loc_id=f'{config.location_type.__name__}_{i}',
+def make_locations(sim_config: PandemicSimConfig,name: Optional[UserString]=None) -> List[Location]:
+    return [config.location_type(loc_id=name+f'{config.location_type.__name__}_{i}',
                                  init_state=config.location_type.state_type(**config.state_opts),
                                  **config.extra_opts)  # type: ignore
             for config in sim_config.location_configs for i in range(config.num)]
@@ -57,7 +62,9 @@ class PandemicSim:
                  new_time_slot_interval: SimTimeInterval = SimTimeInterval(day=1),
                  infection_update_interval: SimTimeInterval = SimTimeInterval(day=1),
                  person_routine_assignment: Optional[PersonRoutineAssignment] = None,
-                 infection_threshold: int = 0):
+                 infection_threshold: int = 0,
+                 #viz:GymViz = None
+                 ):
         """
         :param locations: A sequence of Location instances.
         :param persons: A sequence of Person instances.
@@ -93,6 +100,7 @@ class PandemicSim:
         self._hospital_ids = [loc.id for loc in locations if isinstance(loc, Hospital)]
 
         self._persons = persons
+        #self.viz=viz
 
         # assign routines
         if person_routine_assignment is not None:
@@ -107,18 +115,20 @@ class PandemicSim:
             location_type_infection_summary={type(location): 0 for location in locations},
             global_infection_summary={s: 0 for s in sorted_infection_summary},
             global_testing_state=GlobalTestingState(summary={s: len(persons) if s == InfectionSummary.NONE else 0
-                                                             for s in sorted_infection_summary},
+                                                             for s in sorted_infection_summary},                                                             
                                                     num_tests=0),
             global_location_summary=self._registry.global_location_summary,
             sim_time=SimTime(),
             regulation_stage=0,
             infection_above_threshold=False
         )
+        
 
     @classmethod
     def from_config(cls: Type['PandemicSim'],
                     sim_config: PandemicSimConfig,
-                    sim_opts: PandemicSimOpts = PandemicSimOpts()) -> 'PandemicSim':
+                    sim_opts: PandemicSimOpts = PandemicSimOpts(),
+                    name: Optional[UserString]=None) -> 'PandemicSim':
         """
         Creates an instance using config
 
@@ -128,8 +138,11 @@ class PandemicSim:
         """
         assert globals.registry, 'No registry found. Create the repo wide registry first by calling init_globals()'
 
+        #make viz
+        #viz=GymViz.from_config(sim_config)
+
         # make locations
-        locations = make_locations(sim_config)
+        locations = make_locations(sim_config,name)
 
         # make population
         persons = make_population(sim_config)
@@ -158,7 +171,9 @@ class PandemicSim:
                            pandemic_testing=pandemic_testing,
                            contact_tracer=contact_tracer,
                            infection_threshold=sim_opts.infection_threshold,
-                           person_routine_assignment=sim_config.person_routine_assignment)
+                           person_routine_assignment=sim_config.person_routine_assignment,
+                           #viz=viz
+                           )
 
     @property
     def registry(self) -> Registry:
