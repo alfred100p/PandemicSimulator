@@ -55,7 +55,7 @@ class PandemicObservation:
         global_testing_summary=np.zeros((history_size, 1, len(InfectionSummary)))
         global_testing_summary[0,0]=obs[5:10]*1000
         stage=np.zeros((history_size, 1, 1))
-        stage[0,0]=obs[10]*5
+        stage[0,0]=obs[10]*4
         infection_above_threshold=np.zeros((history_size, 1, 1))
         infection_above_threshold[0,0]=obs[11]
         time_day=np.zeros((history_size, 1, 1))
