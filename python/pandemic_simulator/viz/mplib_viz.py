@@ -1,7 +1,10 @@
 # Confidential, Copyright 2020, Sony Corporation of America, All rights reserved.
+import random
 import string
 from inspect import ismethod
 from typing import List, Any, Dict, Optional, Sequence, Type
+import os
+from torch  import tensor
 
 import numpy as np
 from cycler import cycler
@@ -9,12 +12,23 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.ticker import MaxNLocator
 
-from .evaluation_plots import inf_colors
 from .pandemic_viz import PandemicViz
-from ..environment import PandemicObservation, InfectionSummary, PandemicSimState, PandemicSimConfig
+from ..environment import sorted_infection_summary,PandemicObservation, InfectionSummary, PandemicSimState, PandemicSimConfig
+
+
 
 __all__ = ['BaseMatplotLibViz', 'SimViz', 'GymViz', 'PlotType']
 
+
+inf_to_color = {InfectionSummary.NONE: (0, 1, 0, 1),
+                InfectionSummary.INFECTED: (1, 0.647, 0, 1),
+                InfectionSummary.CRITICAL: (1, 0, 0, 1),
+                InfectionSummary.DEAD: (0.392, 0.392, 0.392, 1),
+                InfectionSummary.RECOVERED: (0, 0, 1, 1)
+                }
+inf_colors = [inf_to_color[summ] for summ in sorted_infection_summary]
+
+parent_dir=os.path.dirname(os.getcwd())
 
 class PlotType:
     global_infection_summary: str = 'gis'
@@ -65,12 +79,19 @@ class BaseMatplotLibViz(PandemicViz):
         self._gts = []
         self._stages = []
 
+        self._prob = []
+        self._log_prob = []
+
         self._gis_legend = []
+
+        self.itr=0
+        self.key=0
 
         plt.rc('axes', prop_cycle=cycler(color=inf_colors))
 
     @classmethod
     def from_config(cls: Type['BaseMatplotLibViz'], sim_config: PandemicSimConfig) -> 'BaseMatplotLibViz':
+        cls.config= sim_config
         return cls(num_persons=sim_config.num_persons, max_hospital_capacity=sim_config.max_hospital_capacity)
 
     def record_obs(self, obs: PandemicObservation) -> None:
@@ -81,6 +102,10 @@ class BaseMatplotLibViz(PandemicViz):
         self._gis.append(obs.global_infection_summary)
         self._gts.append(obs.global_testing_summary)
         self._stages.append(obs.stage)
+
+    def record_probs(self,prob,lprob):
+        self._prob.append(prob.detach().numpy())
+        self._log_prob.append(lprob.detach().numpy())
 
     def record_state(self, state: PandemicSimState) -> None:
         obs = PandemicObservation.create_empty()
@@ -104,6 +129,28 @@ class BaseMatplotLibViz(PandemicViz):
         ax.set_title('Global Infection Summary')
         ax.set_xlabel('time (days)')
         ax.set_ylabel('persons')
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    def plot_prob(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
+        ax = ax or plt.gca()
+        prob = np.vstack(self._prob)
+        ax.plot(prob)
+        ax.legend(['action_0','action_1','action_2'], loc=1)
+        ax.set_ylim(0,  1)
+        ax.set_title('Action Probabilities')
+        ax.set_xlabel('time (days)')
+        ax.set_ylabel('probabilities')
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    def plot_log_prob(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
+        ax = ax or plt.gca()
+        prob = np.vstack(self._log_prob)
+        ax.plot(prob)
+        ax.legend(['action_0','action_1','action_2'], loc=4)
+        ax.set_ylim(-4,  0)
+        ax.set_title('Action Log Probabilities')
+        ax.set_xlabel('time (days)')
+        ax.set_ylabel('log probabilities')
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     def plot_gts(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
@@ -138,6 +185,7 @@ class BaseMatplotLibViz(PandemicViz):
         ax.set_xlabel('time (days)')
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
+
     @staticmethod
     def annotate_plot(ax: Axes, label: str) -> None:
         ax.annotate(f'({label})', (0.5, 0.), xytext=(0, -25 - 20),
@@ -168,6 +216,36 @@ class BaseMatplotLibViz(PandemicViz):
             self.annotate_plot(ax, plot_ref_labels[ax_i])
         plt.tight_layout()
         plt.show()
+    
+    def save(self, plots_to_show: Optional[Sequence[str]] = None, *args: Any, **kwargs: Any) -> None:
+        if plots_to_show:
+            fn_names = [nm for nm in plots_to_show if ismethod(getattr(self, 'plot_' + nm))]
+        else:
+            fn_names = [nm.split('plot_')[-1] for nm in dir(self) if nm.startswith('plot_') is True]
+            fn_names = [nm for nm in sorted(fn_names,
+                                            key=lambda x: PlotType.plot_order().index(x)
+                                            if x in PlotType.plot_order() else np.inf)]
+
+        plot_fns = [getattr(self, 'plot_' + nm) for nm in fn_names]
+
+        """Make plots"""
+        ncols = min(4, len(plot_fns))
+        nrows = int(np.ceil(len(plot_fns) / ncols))
+
+        plt.figure(figsize=(4 * ncols, 4 * nrows))
+
+        plot_ref_labels = string.ascii_lowercase
+        for ax_i, plot_fn in enumerate(plot_fns):
+            ax = plt.subplot(nrows, ncols, ax_i + 1)
+            plot_fn(ax, **kwargs)
+            self.annotate_plot(ax, plot_ref_labels[ax_i])
+        plt.tight_layout()
+
+        try:
+            plt.savefig(parent_dir+'/plots/'+str(self.key)+'/'+str(self.itr)+'plot'+str(self.key)+'.png')
+        except:
+            os.mkdir(os.path.dirname(os.getcwd())+'/plots/'+str(self.key))
+            plt.savefig(parent_dir+'/plots/'+str(self.key)+'/'+str(self.itr)+'plot'+str(self.key)+'.png')
 
 
 class SimViz(BaseMatplotLibViz):
@@ -256,9 +334,10 @@ class SimViz(BaseMatplotLibViz):
             ax.set_title('% Infections / Location Type')
             ax.set_ylabel('% infections')
 
-
-class GymViz(BaseMatplotLibViz):
+class QViz(BaseMatplotLibViz):
     _rewards: List[float]
+    itr: int
+    key:int
 
     def __init__(self, num_persons: int, max_hospital_capacity: Optional[int] = None):
         """
@@ -267,6 +346,8 @@ class GymViz(BaseMatplotLibViz):
         """
         super().__init__(num_persons=num_persons, max_hospital_capacity=max_hospital_capacity)
         self._rewards = []
+        self.itr=0
+        self.key=random.randint(0,10000000)
 
     def plot_cumulative_reward(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
         ax = ax or plt.gca()
@@ -282,3 +363,73 @@ class GymViz(BaseMatplotLibViz):
             obs = data
         assert isinstance(obs, PandemicObservation)
         self.record_obs(obs)
+    
+    def reset(self):
+        newPlot=GymViz.from_config(self.config)
+        newPlot.itr=self.itr+1
+        newPlot.key=self.key
+        return newPlot
+
+    
+
+class GymViz(BaseMatplotLibViz):
+    _rewards: List[float]
+    itr: int
+    key:int
+
+    def __init__(self, num_persons: int, max_hospital_capacity: Optional[int] = None):
+        """
+        :param num_persons: number of persons in the environment
+        :param max_hospital_capacity: maximum hospital capacity, if None, it is set to 1% of the number of persons
+        """
+        super().__init__(num_persons=num_persons, max_hospital_capacity=max_hospital_capacity)
+        self._rewards = []
+        self.itr=0
+        self.key=random.randint(0,10000000)
+
+    def plot_cumulative_reward(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
+        ax = ax or plt.gca()
+        ax.plot(np.cumsum(self._rewards))
+        ax.set_title('Cumulative Reward')
+        ax.set_xlabel('time (days)')
+
+    def record(self, data: Any) -> None:
+        if isinstance(data, tuple):
+            obs, reward = data
+            self._rewards.append(reward)
+        else:
+            obs = data
+        assert isinstance(obs, PandemicObservation)
+        self.record_obs(obs)
+    
+    def reset(self):
+        newPlot=GymViz.from_config(self.config)
+        newPlot.itr=self.itr+1
+        newPlot.key=self.key
+        return newPlot
+
+    def saveQ(self, plots_to_show: Optional[Sequence[str]] = None, *args: Any, **kwargs: Any) -> None:
+        fn_names=['prob','log_prob']
+        
+        plot_fns = [getattr(self, 'plot_' + nm) for nm in fn_names]
+
+        """Make plots"""
+        ncols = min(4, len(plot_fns))
+        nrows = int(np.ceil(len(plot_fns) / ncols))
+
+        plt.figure(figsize=(4 * ncols, 4 * nrows))
+
+        plot_ref_labels = string.ascii_lowercase
+        for ax_i, plot_fn in enumerate(plot_fns):
+            ax = plt.subplot(nrows, ncols, ax_i + 1)
+            plot_fn(ax, **kwargs)
+            self.annotate_plot(ax, plot_ref_labels[ax_i])
+        plt.tight_layout()
+        try:
+            plt.savefig(parent_dir+'/plots/'+str(self.key)+'/Q'+str(self.key)+'_'+str(self.itr)+'.png')
+        except:
+            os.mkdir(os.path.dirname(os.getcwd())+'/plots/'+str(self.key))
+
+            plt.savefig(parent_dir+'/plots/'+str(self.key)+'/Q'+str(self.key)+'_'+str(self.itr)+'.png')
+        self.itr+=1
+
