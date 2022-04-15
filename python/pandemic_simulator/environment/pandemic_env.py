@@ -22,7 +22,7 @@ class PandemicGymEnv(gym.Env):
     _stage_to_regulation: Mapping[int, PandemicRegulation]
     _obs_history_size: int
     _sim_steps_per_regulation: int
-    _non_essential_business_loc_ids: Optional[List[LocationID]]
+    _non_essential_fbusiness_loc_ids: Optional[List[LocationID]]
     _reward_fn: Optional[RewardFunction]
     _done_fn: Optional[DoneFunction]
 
