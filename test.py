@@ -163,4 +163,4 @@ if __name__ == "__main__":
     AGENTS = [SAC_Discrete, ]#DDQN, Dueling_DDQN, DQN, DQN_With_Fixed_Q_Targets,
               #DDQN_With_Prioritised_Experience_Replay, A2C, PPO, A3C ]
     trainer = Trainer(config, AGENTS)
-    trainer.run_games_for_agents()
+    trainer.run_games_for_agents(load=True)

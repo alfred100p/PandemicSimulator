@@ -14,28 +14,28 @@ class SAC_Discrete(SAC):
     """The Soft Actor Critic for discrete actions. It inherits from SAC for continuous actions and only changes a few
     methods."""
     agent_name = "SAC"
-    def __init__(self, config):
-        Base_Agent.__init__(self, config)
+    def __init__(self, config,load):
+        Base_Agent.__init__(self, config,load=load)
         assert self.action_types == "DISCRETE", "Action types must be discrete. Use SAC instead for continuous actions"
         assert self.config.hyperparameters["Actor"]["final_layer_activation"] == "Softmax", "Final actor layer must be softmax"
         self.hyperparameters = config.hyperparameters
-        self.critic_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Critic")
+        self.critic_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Critic",load=load,name="critic_local")
         self.critic_local_2 = self.create_NN(input_dim=self.state_size, output_dim=self.action_size,
-                                           key_to_use="Critic", override_seed=self.config.seed + 1)
+                                           key_to_use="Critic", override_seed=self.config.seed + 1,load=load,name='critic_local_2')
         self.critic_optimizer = torch.optim.Adam(self.critic_local.parameters(),
                                                  lr=self.hyperparameters["Critic"]["learning_rate"], eps=1e-4)
         self.critic_optimizer_2 = torch.optim.Adam(self.critic_local_2.parameters(),
                                                    lr=self.hyperparameters["Critic"]["learning_rate"], eps=1e-4)
         self.critic_target = self.create_NN(input_dim=self.state_size, output_dim=self.action_size,
-                                           key_to_use="Critic")
+                                           key_to_use="Critic",load=load,name="critic_target")
         self.critic_target_2 = self.create_NN(input_dim=self.state_size, output_dim=self.action_size,
-                                            key_to_use="Critic")
+                                            key_to_use="Critic",load=load,name="critic_target_2")
         Base_Agent.copy_model_over(self.critic_local, self.critic_target)
         Base_Agent.copy_model_over(self.critic_local_2, self.critic_target_2)
         self.memory = Replay_Buffer(self.hyperparameters["Critic"]["buffer_size"], self.hyperparameters["batch_size"],
                                     self.config.seed, device=self.device)
 
-        self.actor_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Actor")
+        self.actor_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Actor",load=load,name="actor_local")
         self.actor_optimizer = torch.optim.Adam(self.actor_local.parameters(),
                                           lr=self.hyperparameters["Actor"]["learning_rate"], eps=1e-4)
         self.automatic_entropy_tuning = self.hyperparameters["automatically_tune_entropy_hyperparameter"]

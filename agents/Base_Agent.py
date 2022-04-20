@@ -13,7 +13,7 @@ from torch.optim import optimizer
 
 class Base_Agent(object):
 
-    def __init__(self, config):
+    def __init__(self, config,load):
         self.logger = self.setup_logger()
         self.debug_mode = config.debug_mode
         # if self.debug_mode: self.tensorboard = SummaryWriter()
@@ -328,7 +328,7 @@ class Base_Agent(object):
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
-    def create_NN(self, input_dim, output_dim, key_to_use=None, override_seed=None, hyperparameters=None):
+    def create_NN(self, input_dim, output_dim, key_to_use=None, override_seed=None, hyperparameters=None, load=False,name=''):
         """Creates a neural network for the agents to use"""
         if hyperparameters is None: hyperparameters = self.hyperparameters
         if key_to_use: hyperparameters = hyperparameters[key_to_use]
@@ -344,13 +344,18 @@ class Base_Agent(object):
             if key not in hyperparameters.keys():
                 hyperparameters[key] = default_hyperparameter_choices[key]
 
-        return NN(input_dim=input_dim, layers_info=hyperparameters["linear_hidden_units"] + [output_dim],
+        net2= NN(input_dim=input_dim, layers_info=hyperparameters["linear_hidden_units"] + [output_dim],
                   output_activation=hyperparameters["final_layer_activation"],
                   batch_norm=hyperparameters["batch_norm"], dropout=hyperparameters["dropout"],
                   hidden_activations=hyperparameters["hidden_activations"], initialiser=hyperparameters["initialiser"],
                   columns_of_data_to_be_embedded=hyperparameters["columns_of_data_to_be_embedded"],
                   embedding_dimensions=hyperparameters["embedding_dimensions"], y_range=hyperparameters["y_range"],
                   random_seed=seed).to(self.device)
+        
+        if load: 
+            
+            net2.load_state_dict(torch.load("Models/{}_network.pt".format(self.agent_name+name)))
+            return net2
 
     def turn_on_any_epsilon_greedy_exploration(self):
         """Turns off all exploration with respect to the epsilon greedy exploration strategy"""

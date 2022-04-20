@@ -71,12 +71,12 @@ class Trainer(object):
         }
         return agent_to_color_dictionary
 
-    def run_games_for_agents(self):
+    def run_games_for_agents(self,load=False):
         """Run a set of games for each agent. Optionally visualising and/or saving the results"""
         self.results = self.create_object_to_store_results()
         for agent_number, agent_class in enumerate(self.agents):
             agent_name = agent_class.agent_name
-            self.run_games_for_agent(agent_number + 1, agent_class)
+            self.run_games_for_agent(agent_number + 1, agent_class,load)
             if self.config.visualise_overall_agent_results:
                 agent_rolling_score_results = [results[1] for results in  self.results[agent_name]]
                 self.visualise_overall_agent_results(agent_rolling_score_results, agent_name, show_mean_and_std_range=True)
@@ -93,7 +93,7 @@ class Trainer(object):
         else: results = self.load_obj(self.config.file_to_save_data_results)
         return results
 
-    def run_games_for_agent(self, agent_number, agent_class):
+    def run_games_for_agent(self, agent_number, agent_class,load):
         """Runs a set of games for a given agent, saving the results in self.results"""
         agent_results = []
         agent_name = agent_class.agent_name
@@ -111,7 +111,7 @@ class Trainer(object):
             agent_config.hyperparameters = agent_config.hyperparameters[agent_group]
             print("AGENT NAME: {}".format(agent_name))
             print("\033[1m" + "{}.{}: {}".format(agent_number, agent_round, agent_name) + "\033[0m", flush=True)
-            agent = agent_class(agent_config)
+            agent = agent_class(agent_config,load)
             self.environment_name = agent.environment_title
             print(agent.hyperparameters)
             print("RANDOM SEED " , agent_config.seed)
