@@ -63,8 +63,6 @@ class SAC_Discrete(SAC):
         the argmax action"""
         
         action_probabilities = self.actor_local(state)
-
-        
         max_probability_action = torch.argmax(action_probabilities, dim=-1)
         action_distribution = create_actor_distribution(self.action_types, action_probabilities, self.action_size)
         action = action_distribution.sample().cpu()

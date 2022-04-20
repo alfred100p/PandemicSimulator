@@ -41,7 +41,6 @@ class SAC(Base_Agent):
         self.memory = Replay_Buffer(self.hyperparameters["Critic"]["buffer_size"], self.hyperparameters["batch_size"],
                                     self.config.seed)
         self.actor_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size * 2, key_to_use="Actor")
-        
         self.actor_optimizer = torch.optim.Adam(self.actor_local.parameters(),
                                           lr=self.hyperparameters["Actor"]["learning_rate"], eps=1e-4)
         self.automatic_entropy_tuning = self.hyperparameters["automatically_tune_entropy_hyperparameter"]
@@ -108,8 +107,7 @@ class SAC(Base_Agent):
             self.qviz.saveQ()
             self.locally_save_policy()
         if eval_ep: self.print_summary_of_latest_evaluation_episode()
-        if self.episode_number%50<10:
-            self.viz.save()
+        self.viz.save()
         self.episode_number += 1
     
     def step_eval(self):
@@ -125,12 +123,8 @@ class SAC(Base_Agent):
             self.state = self.next_state
             self.global_step_number += 1
         print(self.total_episode_score_so_far)
-        if self.episode_number%10==0:
-            self.qviz.saveQ()
-            self.locally_save_policy()
-        if eval_ep: self.print_summary_of_latest_evaluation_episode()
-        if self.episode_number%50<10:
-            self.viz.save()
+        self.qviz.saveQ()
+        self.viz.save()
         self.episode_number += 1
         
     
