@@ -100,13 +100,9 @@ class SAC(Base_Agent):
             if not eval_ep: self.save_experience(experience=(self.state, self.action, self.reward, self.next_state, mask))
 
             self.viz.record((ps.env.interfaces.PandemicObservation.from_obs(self.state), self.reward))
-
             self.state = self.next_state
             self.global_step_number += 1
         print(self.total_episode_score_so_far)
-        #input()
-        #self.environment.plot()
-        #input()
         if self.episode_number%10==0:
             self.qviz.saveQ()
             self.locally_save_policy()
