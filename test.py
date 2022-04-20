@@ -25,7 +25,9 @@ ps.init_globals(seed=0)
 sim_config = ps.sh.small_town_config
 
 viz = ps.viz.GymViz.from_config(sim_config=sim_config)
+
 env = ps.env.PandemicGymEnv.from_config(name='test', sim_config=sim_config, pandemic_regulations=ps.sh.austin_regulations,done_fn=ps.env.done.ORDone(done_fns=[ps.env.done.InfectionSummaryAboveThresholdDone(summary_type=ps.env.infection_model.InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),ps.env.done.NoPandemicDone(num_days=30),ps.env.done.NoMoreInfectionsDone()]))
+
 
 p_env=  PandemicGymEnvWrapper(env=env,warmup=True)
 
@@ -94,7 +96,9 @@ config.hyperparameters = {
         "clip_rewards": False,
 
         "Actor": {
+
             "learning_rate": 0.3,
+
             "linear_hidden_units": [128],
             "final_layer_activation": "Softmax",
             "batch_norm": False,
@@ -105,6 +109,7 @@ config.hyperparameters = {
 
         "Critic": {
             "learning_rate": 0.01,
+
             "linear_hidden_units": [128],
             "final_layer_activation": None,
             "batch_norm": False,
