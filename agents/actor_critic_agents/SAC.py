@@ -126,7 +126,6 @@ class SAC(Base_Agent):
         self.qviz.saveQ()
         self.viz.save()
         self.episode_number += 1
-        
     
 
 

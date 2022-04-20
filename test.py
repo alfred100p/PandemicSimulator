@@ -21,35 +21,13 @@ from tqdm import trange
 
 import pandemic_simulator as ps
 
-
-
-
-def run_pandemic_gym_env() -> None:
-    """Here we execute the gym envrionment wrapped simulator using austin regulations,
-    a small town config and default person routines."""
-
-    print('\nA tutorial that runs the OpenAI Gym environment wrapped simulator', flush=True)
-
-
-    env = ps.env.PandemicGymEnv.from_config( sim_config=sim_config, pandemic_regulations=ps.sh.austin_regulations,done_fn=ps.env.done.ORDone(done_fns=[ps.env.done.InfectionSummaryAboveThresholdDone(summary_type=ps.env.infection_model.InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),ps.env.done.NoPandemicDone(num_days=30)]))
-
-    # setup viz
-    viz = ps.viz.GymViz.from_config(sim_config=sim_config)
-
-    # run stage-0 action steps in the environment
-    env.reset()
-    for _ in trange(100, desc='Simulating day'):
-        obs, reward, done, aux = env.step(action=0)  # here the action is the discrete regulation stage identifier
-        viz.record((obs, reward))
-
-    # generate plots
-    viz.plot()
-
 ps.init_globals(seed=0)
 sim_config = ps.sh.small_town_config
 
 viz = ps.viz.GymViz.from_config(sim_config=sim_config)
-env = ps.env.PandemicGymEnv.from_config(name='test', sim_config=sim_config, pandemic_regulations=ps.sh.austin_regulations,done_fn=ps.env.done.ORDone(done_fns=[ps.env.done.InfectionSummaryAboveThresholdDone(summary_type=ps.env.infection_model.InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),ps.env.done.NoPandemicDone(num_days=30),ps.env.done.NoPandemicDone(num_days=30),ps.env.done.NoMoreInfectionsDone()]))
+
+env = ps.env.PandemicGymEnv.from_config(name='test', sim_config=sim_config, pandemic_regulations=ps.sh.austin_regulations,done_fn=ps.env.done.ORDone(done_fns=[ps.env.done.InfectionSummaryAboveThresholdDone(summary_type=ps.env.infection_model.InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),ps.env.done.NoPandemicDone(num_days=30),ps.env.done.NoMoreInfectionsDone()]))
+
 
 p_env=  PandemicGymEnvWrapper(env=env,warmup=True)
 
@@ -118,7 +96,9 @@ config.hyperparameters = {
         "clip_rewards": False,
 
         "Actor": {
-            "learning_rate": 0.01,
+
+            "learning_rate": 0.3,
+
             "linear_hidden_units": [128],
             "final_layer_activation": "Softmax",
             "batch_norm": False,
@@ -128,7 +108,8 @@ config.hyperparameters = {
         },
 
         "Critic": {
-            "learning_rate": 0.03,
+            "learning_rate": 0.01,
+
             "linear_hidden_units": [128],
             "final_layer_activation": None,
             "batch_norm": False,
