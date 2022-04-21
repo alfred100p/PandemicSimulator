@@ -167,7 +167,11 @@ class BaseMatplotLibViz(PandemicViz):
     def plot_critical_summary(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
         ax = ax or plt.gca()
         gis = np.vstack(self._gis).squeeze()
+        gts = np.vstack(self._gts).squeeze()
+
         ax.plot(gis[:, self._critical_index])
+        ax.plot(gts[:, self._critical_index+2])
+
         ax.plot(np.arange(gis.shape[0]), np.ones(gis.shape[0]) * self._max_hospital_capacity, 'y')
         ax.legend([InfectionSummary.CRITICAL.value, 'Max hospital capacity'], loc=1)
         ax.set_ylim(-0.1, self._max_hospital_capacity * 3)
@@ -204,7 +208,7 @@ class BaseMatplotLibViz(PandemicViz):
         plot_fns = [getattr(self, 'plot_' + nm) for nm in fn_names]
 
         """Make plots"""
-        ncols = min(4, len(plot_fns))
+        ncols = min(2, len(plot_fns))
         nrows = int(np.ceil(len(plot_fns) / ncols))
 
         plt.figure(figsize=(4 * ncols, 4 * nrows))
@@ -226,10 +230,12 @@ class BaseMatplotLibViz(PandemicViz):
                                             key=lambda x: PlotType.plot_order().index(x)
                                             if x in PlotType.plot_order() else np.inf)]
 
-        plot_fns = [getattr(self, 'plot_' + nm) for nm in fn_names]
+       
 
+        fn_names=["cumulative_reward","gis","critical_summary","gts","stages","log_prob","prob"]
+        plot_fns = [getattr(self, 'plot_' + nm) for nm in fn_names]
         """Make plots"""
-        ncols = min(4, len(plot_fns))
+        ncols = min(2, len(plot_fns))
         nrows = int(np.ceil(len(plot_fns) / ncols))
 
         plt.figure(figsize=(4 * ncols, 4 * nrows))
@@ -246,6 +252,8 @@ class BaseMatplotLibViz(PandemicViz):
         except:
             os.mkdir(os.path.dirname(os.getcwd())+'/plots/'+str(self.key))
             plt.savefig(parent_dir+'/plots/'+str(self.key)+'/'+str(self.itr)+'plot'+str(self.key)+'.png')
+
+        plt.close()
 
 
 class SimViz(BaseMatplotLibViz):
@@ -432,4 +440,6 @@ class GymViz(BaseMatplotLibViz):
 
             plt.savefig(parent_dir+'/plots/'+str(self.key)+'/Q'+str(self.key)+'_'+str(self.itr)+'.png')
         self.itr+=1
+        plt.close()
+
 
