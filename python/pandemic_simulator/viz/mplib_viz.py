@@ -246,6 +246,7 @@ class BaseMatplotLibViz(PandemicViz):
         except:
             os.mkdir(os.path.dirname(os.getcwd())+'/plots/'+str(self.key))
             plt.savefig(parent_dir+'/plots/'+str(self.key)+'/'+str(self.itr)+'plot'+str(self.key)+'.png')
+        plt.close()
 
 
 class SimViz(BaseMatplotLibViz):
@@ -431,5 +432,6 @@ class GymViz(BaseMatplotLibViz):
             os.mkdir(os.path.dirname(os.getcwd())+'/plots/'+str(self.key))
 
             plt.savefig(parent_dir+'/plots/'+str(self.key)+'/Q'+str(self.key)+'_'+str(self.itr)+'.png')
+        plt.close()
         self.itr+=1
 
