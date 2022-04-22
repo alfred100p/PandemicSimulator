@@ -97,7 +97,7 @@ config.hyperparameters = {
 
         "Actor": {
 
-            "learning_rate": 0.03,
+            "learning_rate": 0.01,
 
             "linear_hidden_units": [128],
             "final_layer_activation": "Softmax",
@@ -108,7 +108,7 @@ config.hyperparameters = {
         },
 
         "Critic": {
-            "learning_rate": 0.03,
+            "learning_rate": 0.1,
 
             "linear_hidden_units": [128],
             "final_layer_activation": None,
