@@ -22,7 +22,6 @@ setup(
         'networkx',  # for graph analysis
         'numpy==1.19.5',    # 1.20 numpy requires mypy fixes #TODO
         'scipy',
-        'probabilistic-automata>=0.4.0',  # for probabilistic DFA
         'pyrsistent>=0.15.5',  # for frozen classes
         'pytest>=5.2.2',
         'PyYAML>=5.3.1',
