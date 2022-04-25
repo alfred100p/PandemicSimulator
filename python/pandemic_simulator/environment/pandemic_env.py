@@ -97,10 +97,12 @@ class PandemicGymEnv(gym.Env):
                 RewardFunctionFactory.default(RewardFunctionType.INFECTION_SUMMARY_ABOVE_THRESHOLD,
                                               summary_type=InfectionSummary.CRITICAL,
                                               threshold=sim_config.max_hospital_capacity),
+                RewardFunctionFactory.default(RewardFunctionType.LOWER_STAGE,
+                                              num_stages=len(pandemic_regulations)),
                 RewardFunctionFactory.default(RewardFunctionType.SMOOTH_STAGE_CHANGES,
                                               num_stages=len(pandemic_regulations))
             ],
-            weights=[.4, 0.02]
+            weights=[.4,.1, 0.02]
         )
 
         return PandemicGymEnv(pandemic_sim=sim,
