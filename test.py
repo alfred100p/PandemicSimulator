@@ -51,35 +51,7 @@ config.save_model = True
 config.hyperparameters = {
     
     
-    "Stochastic_Policy_Search_Agents": {
-        "policy_network_type": "Linear",
-        "noise_scale_start": 1e-2,
-        "noise_scale_min": 1e-3,
-        "noise_scale_max": 2.0,
-        "noise_scale_growth_factor": 2.0,
-        "stochastic_action_decision": False,
-        "num_policies": 1,
-        "episodes_per_policy": 1,
-        "num_policies_to_keep": 5,
-        "clip_rewards": False
-    },
-    "Policy_Gradient_Agents": {
-        "learning_rate": 0.05,
-        "linear_hidden_units": [20, 20],
-        "final_layer_activation": "SOFTMAX",
-        "learning_iterations_per_round": 5,
-        "discount_rate": 0.99,
-        "batch_norm": False,
-        "clip_epsilon": 0.1,
-        "episodes_per_learning_round": 4,
-        "normalise_rewards": True,
-        "gradient_clipping_norm": 7.0,
-        "mu": 0.0, #only required for continuous action games
-        "theta": 0.0, #only required for continuous action games
-        "sigma": 0.0, #only required for continuous action games
-        "epsilon_decay_rate_denominator": 1.0,
-        "clip_rewards": False
-    },
+    
 
 
     
@@ -128,7 +100,7 @@ config.hyperparameters = {
         "action_noise_std": 0.2,  # for TD3
         "action_noise_clipping_range": 0.5,  # for TD3
         "update_every_n_steps": 30,
-        "learning_updates_per_learning_session": 1,
+        "learning_updates_per_learning_session": 8000,
         "automatically_tune_entropy_hyperparameter": True,
         "entropy_term_weight": None,
         "add_extra_noise": False,
