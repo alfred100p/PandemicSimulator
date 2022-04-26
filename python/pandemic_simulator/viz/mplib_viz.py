@@ -81,11 +81,14 @@ class BaseMatplotLibViz(PandemicViz):
 
         self._prob = []
         self._log_prob = []
+        self._c_prob = []
+        self._c_log_prob = []
 
         self._gis_legend = []
 
         self.itr=0
         self.key=0
+        self.x=0
 
         plt.rc('axes', prop_cycle=cycler(color=inf_colors))
 
@@ -106,6 +109,8 @@ class BaseMatplotLibViz(PandemicViz):
     def record_probs(self,prob,lprob):
         self._prob.append(prob.detach().numpy())
         self._log_prob.append(lprob.detach().numpy())
+        self._c_prob.append(prob.detach().numpy())
+        self._c_log_prob.append(lprob.detach().numpy())
 
     def record_state(self, state: PandemicSimState) -> None:
         obs = PandemicObservation.create_empty()
@@ -253,7 +258,14 @@ class BaseMatplotLibViz(PandemicViz):
             os.mkdir(os.path.dirname(os.getcwd())+'/plots/'+str(self.key))
             plt.savefig(parent_dir+'/plots/'+str(self.key)+'/'+str(self.itr)+'plot'+str(self.key)+'.png')
         plt.close()
+        self.itr+=1
+        self._gis = []
+        self._gts = []
+        self._stages = []
+        self._prob = []
+        self._log_prob = []
 
+        plt.close()
         plt.close()
 
 
@@ -363,6 +375,8 @@ class QViz(BaseMatplotLibViz):
         ax.plot(np.cumsum(self._rewards))
         ax.set_title('Cumulative Reward')
         ax.set_xlabel('time (days)')
+        print('mean reward')
+        print(np.mean(self._rewards))
 
     def record(self, data: Any) -> None:
         if isinstance(data, tuple):
@@ -417,10 +431,32 @@ class GymViz(BaseMatplotLibViz):
         newPlot.key=self.key
         return newPlot
 
+    def c_plot_prob(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
+        ax = ax or plt.gca()
+        prob = np.vstack(self._prob)
+        ax.plot(prob)
+        ax.legend(['action_0','action_1','action_2'], loc=1)
+        ax.set_ylim(0,  1)
+        ax.set_title('Action Probabilities')
+        ax.set_xlabel('time (days)')
+        ax.set_ylabel('probabilities')
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    def c_plot_log_prob(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
+        ax = ax or plt.gca()
+        prob = np.vstack(self._log_prob)
+        ax.plot(prob)
+        ax.legend(['action_0','action_1','action_2'], loc=4)
+        ax.set_ylim(-4,  0)
+        ax.set_title('Action Log Probabilities')
+        ax.set_xlabel('time (days)')
+        ax.set_ylabel('log probabilities')
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
     def saveQ(self, plots_to_show: Optional[Sequence[str]] = None, *args: Any, **kwargs: Any) -> None:
         fn_names=['prob','log_prob']
         
-        plot_fns = [getattr(self, 'plot_' + nm) for nm in fn_names]
+        plot_fns = [getattr(self, 'c_plot_' + nm) for nm in fn_names]
 
         """Make plots"""
         ncols = min(2, len(plot_fns))
@@ -443,5 +479,8 @@ class GymViz(BaseMatplotLibViz):
         plt.close()
         self.itr+=1
         plt.close()
+
+
+
 
 
