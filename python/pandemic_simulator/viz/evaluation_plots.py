@@ -1,12 +1,12 @@
 # Confidential, Copyright 2020, Sony Corporation of America, All rights reserved.
 from typing import Optional, Sequence, List, Tuple, Union
+from ..data import ExperimentResult, StageSchedule
 
 import numpy as np
 from matplotlib import pyplot as plt, cycler
 from matplotlib.axes import Axes
 from mpl_toolkits.mplot3d import Axes3D
 
-from ..data import ExperimentResult, StageSchedule
 from ..environment import sorted_infection_summary, InfectionSummary
 
 __all__ = ['plot_cumulative_reward', 'plot_critical_summary', 'plot_global_infection_summary',
