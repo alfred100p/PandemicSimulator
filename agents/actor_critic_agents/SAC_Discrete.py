@@ -103,14 +103,13 @@ class SAC_Discrete(SAC):
         return policy_loss, log_action_probabilities
 
     def locally_save_policy(self):
-        """Saves the policy"""
-        if self.i%10==0: 
-            torch.save(self.critic_local.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_local_network.pt".format(self.agent_name))
-            torch.save(self.critic_local_2.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_local_2_network.pt".format(self.agent_name))
-            torch.save(self.critic_optimizer.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_optimizer_network.pt".format(self.agent_name))
-            torch.save(self.critic_optimizer_2.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_optimizer_2_network.pt".format(self.agent_name))
-            torch.save(self.critic_target.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_target_network.pt".format(self.agent_name))
-            torch.save(self.critic_target_2.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_target_2_network.pt".format(self.agent_name))
-            torch.save(self.actor_local.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}actor_local_network.pt".format(self.agent_name))
-            torch.save(self.actor_optimizer.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}actor_optimizer_network.pt".format(self.agent_name))
+    """Saves the policy"""
+        torch.save(self.critic_local.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_local_network.pt".format(self.agent_name))
+        torch.save(self.critic_local_2.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_local_2_network.pt".format(self.agent_name))
+        torch.save(self.critic_optimizer.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_optimizer_network.pt".format(self.agent_name))
+        torch.save(self.critic_optimizer_2.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_optimizer_2_network.pt".format(self.agent_name))
+        torch.save(self.critic_target.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_target_network.pt".format(self.agent_name))
+        torch.save(self.critic_target_2.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}critic_target_2_network.pt".format(self.agent_name))
+        torch.save(self.actor_local.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}actor_local_network.pt".format(self.agent_name))
+        torch.save(self.actor_optimizer.state_dict(), "/u/alfredwj/home/sModelsx/"+str(self.i)+"{}actor_optimizer_network.pt".format(self.agent_name))
         self.i+=1
