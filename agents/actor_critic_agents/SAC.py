@@ -103,7 +103,7 @@ class SAC(Base_Agent):
             self.state = self.next_state
             self.global_step_number += 1
         print(self.total_episode_score_so_far)
-        if self.episode_number%10==0:
+        if self.episode_number%25==0:
             self.qviz.saveQ()
             self.locally_save_policy()
         if eval_ep: self.print_summary_of_latest_evaluation_episode()
