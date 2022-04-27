@@ -128,7 +128,7 @@ config.hyperparameters = {
         "action_noise_std": 0.2,  # for TD3
         "action_noise_clipping_range": 0.5,  # for TD3
         "update_every_n_steps": 30,
-        "learning_updates_per_learning_session": 1,
+        "learning_updates_per_learning_session": config.num_episodes_to_run/10,
         "automatically_tune_entropy_hyperparameter": True,
         "entropy_term_weight": None,
         "add_extra_noise": False,
