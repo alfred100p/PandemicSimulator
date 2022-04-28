@@ -171,6 +171,17 @@ class SAC(Base_Agent):
         
         action = action.detach().cpu().numpy()
         return action[0]
+    
+    def conduct_action(self, action,rnd=False):
+        """Conducts an action in the environment"""
+        if rnd:
+            self.next_state, self.reward, self.done, self.action,_ = self.environment.rstep(action)
+
+        else:
+            self.next_state, self.reward, self.done, self.action, _ = self.environment.step(action)
+        self.total_episode_score_so_far += self.reward
+        if self.hyperparameters["clip_rewards"]: self.reward =  max(min(self.reward, 1.0), -1.0)
+
 
     def produce_action_and_action_info(self, state):
         """Given the state, produces an action, the log probability of the action, and the tanh of the mean action"""

@@ -269,7 +269,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
         #print(self.env._last_observation)
         #self.env._pandemic_sim.viz.record(self.env._last_observation,self.env._last_reward)
         #print(self.env._last_reward)
-        return self.env._last_observation.obs, self.env._last_reward, done, {}
+        return self.env._last_observation.obs, self.env._last_reward, done, act, {}
     
     def rstep(self, act: int) -> Tuple[PandemicObservation, float, bool, Dict]:
         assert self.action_space.contains(act), "%r (%s) invalid" % (act, type(act))
@@ -306,7 +306,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
         #self.env._pandemic_sim.viz.record(self.env._last_observation,self.env._last_reward)
         #print(self.env._last_reward)
 
-        return self.env._last_observation.obs, self.env._last_reward, done, {}
+        return self.env._last_observation.obs, self.env._last_reward, done, act, {}
     
     def plot(self):
         return 0
