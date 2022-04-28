@@ -20,7 +20,6 @@ setup(
         'istype>=0.2.0',
         'matplotlib',
         'networkx',  # for graph analysis
-        'numpy==1.19.5',    # 1.20 numpy requires mypy fixes #TODO
         'scipy',
         'pyrsistent>=0.15.5',  # for frozen classes
         'pytest>=5.2.2',
