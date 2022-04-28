@@ -42,7 +42,7 @@ config.visualise_individual_results = False
 config.visualise_overall_agent_results = True
 config.standard_deviation_results = 1.0
 config.runs_per_agent = 1
-config.use_GPU = False
+config.use_GPU = True
 config.overwrite_existing_results_file = False
 config.randomise_random_seed = True
 config.save_model = True
@@ -59,7 +59,7 @@ config.hyperparameters = {
 
         "Actor": {
 
-            "learning_rate": 0.03,
+            "learning_rate": 0.01,
 
             "linear_hidden_units": [128],
             "final_layer_activation": "Softmax",
@@ -70,7 +70,7 @@ config.hyperparameters = {
         },
 
         "Critic": {
-            "learning_rate": 0.01,
+            "learning_rate": 0.03,
 
             "linear_hidden_units": [128],
             "final_layer_activation": None,
@@ -87,7 +87,7 @@ config.hyperparameters = {
         "theta": 0.15, #for O-H noise
         "sigma": 0.25, #for O-H noise
         "update_every_n_steps": 1,
-        "learning_updates_per_learning_session": config.num_episodes_to_run/10,
+        "learning_updates_per_learning_session": config.num_episodes_to_run,
         "automatically_tune_entropy_hyperparameter": True,
         "entropy_term_weight": 0.01,
         "add_extra_noise": False,
