@@ -16,7 +16,6 @@ from agents.DQN_agents.DDQN import DDQN
 from agents.DQN_agents.DDQN_With_Prioritised_Experience_Replay import DDQN_With_Prioritised_Experience_Replay
 from agents.DQN_agents.DQN import DQN
 from agents.DQN_agents.DQN_With_Fixed_Q_Targets import DQN_With_Fixed_Q_Targets
-from python.pandemic_simulator.environment.pandemic_env import PandemicGymEnvWrapper
 from tqdm import trange
 
 import pandemic_simulator as ps
@@ -29,7 +28,7 @@ viz = ps.viz.GymViz.from_config(sim_config=sim_config)
 env = ps.env.PandemicGymEnv.from_config(name='test', sim_config=sim_config, pandemic_regulations=ps.sh.austin_regulations,done_fn=ps.env.done.ORDone(done_fns=[ps.env.done.InfectionSummaryAboveThresholdDone(summary_type=ps.env.infection_model.InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),ps.env.done.NoPandemicDone(num_days=30)]))
 
 
-p_env=  PandemicGymEnvWrapper(env=env,warmup=True)
+p_env=  ps.env.PandemicGymEnvWrapper(env=env,warmup=True)
 
 config = Config()
 config.seed = 1
