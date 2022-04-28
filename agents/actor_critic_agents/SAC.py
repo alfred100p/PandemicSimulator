@@ -25,6 +25,7 @@ class SAC(Base_Agent):
         assert self.action_types == "CONTINUOUS", "Action types must be continuous. Use SAC Discrete instead for discrete actions"
         assert self.config.hyperparameters["Actor"]["final_layer_activation"] != "Softmax", "Final actor layer must not be softmax"
         self.hyperparameters = config.hyperparameters
+        self.i=0
         self.critic_local = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1, key_to_use="Critic")
         self.critic_local_2 = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1,
                                            key_to_use="Critic", override_seed=self.config.seed + 1)
@@ -84,6 +85,7 @@ class SAC(Base_Agent):
         Base_Agent.reset_game(self)
         if self.add_extra_noise: self.noise.reset()
         self.viz=self.viz.reset()
+        self.i+=1
 
     def step(self):
         """Runs an episode on the game, saving the experience and running a learning step if appropriate"""
@@ -98,8 +100,8 @@ class SAC(Base_Agent):
                     self.learn()
             mask = False if self.episode_step_number_val > 119 else self.done
             if not eval_ep: self.save_experience(experience=(self.state, self.action, self.reward, self.next_state, mask))
-
-            self.viz.record((ps.env.interfaces.PandemicObservation.from_obs(self.state), self.reward))
+            if self.i%100<10:
+                self.viz.record((ps.env.interfaces.PandemicObservation.from_obs(self.state), self.reward))
             self.state = self.next_state
             self.global_step_number += 1
         print(self.total_episode_score_so_far)
@@ -107,7 +109,8 @@ class SAC(Base_Agent):
             self.qviz.saveQ()
             self.locally_save_policy()
         if eval_ep: self.print_summary_of_latest_evaluation_episode()
-        self.viz.save()
+        if self.i%100<10:
+                self.viz.save()
         self.episode_number += 1
     
     def step_eval(self):
@@ -145,7 +148,8 @@ class SAC(Base_Agent):
             state = torch.FloatTensor(np.array(state)).to(self.device)
             if len(state.shape) == 1: state = state.unsqueeze(0)
             _,z, _ = self.produce_action_and_action_info(state)
-            self.viz.record_probs(z[0],z[1])
+            if self.i%100<10:
+                self.viz.record_probs(z[0],z[1])
             self.qviz.record_probs(z[0],z[1])
         else: action = self.actor_pick_action(state=state)
         if self.add_extra_noise:
@@ -165,7 +169,8 @@ class SAC(Base_Agent):
                 
                 _, z, action = self.produce_action_and_action_info(state)
                 
-        self.viz.record_probs(z[0],z[1])
+        if self.i%100<10:
+                self.viz.record_probs(z[0],z[1])
         self.qviz.record_probs(z[0],z[1])
 
         
