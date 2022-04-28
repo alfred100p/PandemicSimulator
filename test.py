@@ -34,7 +34,7 @@ p_env=  PandemicGymEnvWrapper(env=env,warmup=True)
 config = Config()
 config.seed = 1
 config.environment = p_env
-config.num_episodes_to_run = 4000
+config.num_episodes_to_run = 8000
 config.file_to_save_data_results = "results/data_and_graphs/PandemicSim_Results_Data.pkl"
 config.file_to_save_results_graph = "results/data_and_graphs/PandemicSim_Results_Graph.png"
 config.show_solution_score = False
@@ -86,7 +86,7 @@ config.hyperparameters = {
         "mu": 0.0, #for O-H noise
         "theta": 0.15, #for O-H noise
         "sigma": 0.25, #for O-H noise
-        "update_every_n_steps": 30,
+        "update_every_n_steps": 1,
         "learning_updates_per_learning_session": config.num_episodes_to_run/10,
         "automatically_tune_entropy_hyperparameter": True,
         "entropy_term_weight": 0.01,
