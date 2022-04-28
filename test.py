@@ -26,7 +26,7 @@ sim_config = ps.sh.small_town_config
 
 viz = ps.viz.GymViz.from_config(sim_config=sim_config)
 
-env = ps.env.PandemicGymEnv.from_config(name='test', sim_config=sim_config, pandemic_regulations=ps.sh.austin_regulations,done_fn=ps.env.done.ORDone(done_fns=[ps.env.done.InfectionSummaryAboveThresholdDone(summary_type=ps.env.infection_model.InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),ps.env.done.NoPandemicDone(num_days=30),ps.env.done.NoMoreInfectionsDone()]))
+env = ps.env.PandemicGymEnv.from_config(name='test', sim_config=sim_config, pandemic_regulations=ps.sh.austin_regulations,done_fn=ps.env.done.ORDone(done_fns=[ps.env.done.InfectionSummaryAboveThresholdDone(summary_type=ps.env.infection_model.InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),ps.env.done.NoPandemicDone(num_days=30)]))
 
 
 p_env=  PandemicGymEnvWrapper(env=env,warmup=True)
@@ -34,7 +34,7 @@ p_env=  PandemicGymEnvWrapper(env=env,warmup=True)
 config = Config()
 config.seed = 1
 config.environment = p_env
-config.num_episodes_to_run = 8000
+config.num_episodes_to_run = 4000
 config.file_to_save_data_results = "results/data_and_graphs/PandemicSim_Results_Data.pkl"
 config.file_to_save_results_graph = "results/data_and_graphs/PandemicSim_Results_Graph.png"
 config.show_solution_score = False
@@ -50,17 +50,7 @@ config.save_model = True
 
 config.hyperparameters = {
     
-    
-    
-
-
-    
     "Actor_Critic_Agents":  {
-
-        "learning_rate": 0.005,
-        "linear_hidden_units": [20, 10],
-        "final_layer_activation": ["SOFTMAX", None],
-        "gradient_clipping_norm": 5.0,
         "discount_rate": 0.99,
         "epsilon_decay_rate_denominator": 1.0,
         "normalise_rewards": True,
@@ -69,7 +59,7 @@ config.hyperparameters = {
 
         "Actor": {
 
-            "learning_rate": 0.01,
+            "learning_rate": 0.03,
 
             "linear_hidden_units": [128],
             "final_layer_activation": "Softmax",
@@ -80,7 +70,7 @@ config.hyperparameters = {
         },
 
         "Critic": {
-            "learning_rate": 0.03,
+            "learning_rate": 0.01,
 
             "linear_hidden_units": [128],
             "final_layer_activation": None,
@@ -91,18 +81,15 @@ config.hyperparameters = {
             "initialiser": "Xavier"
         },
 
-        "min_steps_before_learning": 50,
+        "min_steps_before_learning": 1000,
         "batch_size": 16,
-        "discount_rate": 0.99,
         "mu": 0.0, #for O-H noise
         "theta": 0.15, #for O-H noise
         "sigma": 0.25, #for O-H noise
-        "action_noise_std": 0.2,  # for TD3
-        "action_noise_clipping_range": 0.5,  # for TD3
         "update_every_n_steps": 30,
-        "learning_updates_per_learning_session": 8000,
+        "learning_updates_per_learning_session": config.num_episodes_to_run/10,
         "automatically_tune_entropy_hyperparameter": True,
-        "entropy_term_weight": None,
+        "entropy_term_weight": 0.01,
         "add_extra_noise": False,
         "do_evaluation_iterations": True
     }
