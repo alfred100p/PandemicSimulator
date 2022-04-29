@@ -19,6 +19,7 @@ class SAC_Discrete(SAC):
         assert self.action_types == "DISCRETE", "Action types must be discrete. Use SAC instead for continuous actions"
         assert self.config.hyperparameters["Actor"]["final_layer_activation"] == "Softmax", "Final actor layer must be softmax"
         self.hyperparameters = config.hyperparameters
+        self.i=0
         self.critic_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Critic",load=load,name="critic_local")
         self.critic_local_2 = self.create_NN(input_dim=self.state_size, output_dim=self.action_size,
                                            key_to_use="Critic", override_seed=self.config.seed + 1,load=load,name='critic_local_2')
@@ -103,12 +104,13 @@ class SAC_Discrete(SAC):
 
     def locally_save_policy(self):
         """Saves the policy"""
-        torch.save(self.critic_local.state_dict(), "/u/alfredwj/home/Models4/{}critic_local_network.pt".format(self.agent_name))
-        torch.save(self.critic_local_2.state_dict(), "/u/alfredwj/home/Models4/{}critic_local_2_network.pt".format(self.agent_name))
-        torch.save(self.critic_optimizer.state_dict(), "/u/alfredwj/home/Models4/{}critic_optimizer_network.pt".format(self.agent_name))
-        torch.save(self.critic_optimizer_2.state_dict(), "/u/alfredwj/home/Models4/{}critic_optimizer_2_network.pt".format(self.agent_name))
-        torch.save(self.critic_target.state_dict(), "/u/alfredwj/home/Models4/{}critic_target_network.pt".format(self.agent_name))
-        torch.save(self.critic_target_2.state_dict(), "/u/alfredwj/home/Models4/{}critic_target_2_network.pt".format(self.agent_name))
-        torch.save(self.actor_local.state_dict(), "/u/alfredwj/home/Models4/{}actor_local_network.pt".format(self.agent_name))
-        torch.save(self.actor_optimizer.state_dict(), "/u/alfredwj/home/Models4/{}actor_optimizer_network.pt".format(self.agent_name))
+        torch.save(self.critic_local.state_dict(), "/u/alfredwj/home/x/"+str(self.i)+"{}critic_local_network.pt".format(self.agent_name))
+        torch.save(self.critic_local_2.state_dict(), "/u/alfredwj/home/x/"+str(self.i)+"{}critic_local_2_network.pt".format(self.agent_name))
+        torch.save(self.critic_optimizer.state_dict(), "/u/alfredwj/home/x/"+str(self.i)+"{}critic_optimizer_network.pt".format(self.agent_name))
+        torch.save(self.critic_optimizer_2.state_dict(), "/u/alfredwj/home/x/"+str(self.i)+"{}critic_optimizer_2_network.pt".format(self.agent_name))
+        torch.save(self.critic_target.state_dict(), "/u/alfredwj/home/x/"+str(self.i)+"{}critic_target_network.pt".format(self.agent_name))
+        torch.save(self.critic_target_2.state_dict(), "/u/alfredwj/home/x/"+str(self.i)+"{}critic_target_2_network.pt".format(self.agent_name))
+        torch.save(self.actor_local.state_dict(), "/u/alfredwj/home/x/"+str(self.i)+"{}actor_local_network.pt".format(self.agent_name))
+        torch.save(self.actor_optimizer.state_dict(), "/u/alfredwj/home/x/"+str(self.i)+"{}actor_optimizer_network.pt".format(self.agent_name))
+        self.i+=1
 
