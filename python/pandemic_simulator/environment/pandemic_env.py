@@ -245,7 +245,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
 
         # execute the action if different from the current stage
         if act != 1:  # stage has a TNC layout
-            regulation = self.env._stage_to_regulation[int(max(0,min(5,self.env._last_observation.stage[0,0,0]-1+act)))]
+            regulation = self.env._stage_to_regulation[int(max(0,min(len(self.env._stage_to_regulation)-1,self.env._last_observation.stage[0,0,0]-1+act)))]
             self.env._pandemic_sim.impose_regulation(regulation=regulation)
 
         # update the sim until next regulation interval trigger and construct obs from state hist
