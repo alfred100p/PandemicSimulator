@@ -193,6 +193,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
         self.env=env
         self.action_space=gym.spaces.Discrete(3,)
         self.warmup=warmup
+        self.flag=warmup
 
     def reset(self) -> PandemicObservation:
         self.env.reset()
@@ -207,25 +208,39 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
             0 Maintain Current Stage
             1 Increase Stage by 1 
         '''
-        if self.warmup:
-            #print('warmup')
-            if self.env._last_observation.obs[11]:
-                if self.env._last_observation.stage[0,0,0]<4:
-                    return 2
-                else:
-                    self.warmup=False
-                    #print('warmup over'+str(self.env._last_observation.obs[12]*120))
-                    
-                    return act
-            else:
-                if self.env._last_observation.stage[0,0,0]>0:
-                    return 0
-                else:
-                    return 1
-                
-        else:
-            return act
+        if self.flag:
+            if self.warmup:
+                #print('warmup')
+                if self.env._last_observation.obs[11]:
+                    if self.env._last_observation.stage[0,0,0]<4:
+                        return 2
+                    else:
 
+                        self.flag=False
+                        #print('warmup over'+str(self.env._last_observation.obs[12]*120))
+
+                        return act
+                else:
+                    if self.env._last_observation.stage[0,0,0]>0:
+                        return 0
+                    else:
+                        return 1
+
+            else:
+                return act
+        else:
+            if self.warmup:
+                if self.env._last_observation.obs[11]:
+                    return 1
+                else:
+                    if self.env._last_observation.stage[0,0,0]>0:
+                        return 0
+                    else:
+                        self.warmup=False
+                        return act
+            else:
+                return act
+                
     def raction(self, act):
         '''
         act: action value from [-1,0,1]
