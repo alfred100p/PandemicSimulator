@@ -216,7 +216,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
                     self.warmup=False
                     #print('warmup over'+str(self.env._last_observation.obs[12]*120))
                     
-                    return int(max(0,min(act-1+self.env._last_observation.stage[-1, 0, 0],len(self.env._stage_to_regulation)-1)))
+                    return act
             else:
                 if self.env._last_observation.stage[0,0,0]>0:
                     return 0
@@ -224,7 +224,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
                     return 1
                 
         else:
-            return int(max(0,min(act-1+self.env._last_observation.stage[-1, 0, 0],len(self.env._stage_to_regulation)-1)))
+            return act
 
     def raction(self, act):
         '''
@@ -234,7 +234,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
             1 Increase Stage by 1 
         '''
 
-        return int(max(0,min(act-1+self.env._last_observation.stage[-1, 0, 0],len(self.env._stage_to_regulation)-1)))
+        return act
 
 
 
@@ -280,8 +280,8 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
         
 
         # execute the action if different from the current stage
-        if act != self.env._last_observation.stage[-1, 0, 0]:  # stage has a TNC layout
-            regulation = self.env._stage_to_regulation[act]
+        if act != 1:  # stage has a TNC layout
+            regulation = self.env._stage_to_regulation[int(max(0,min(len(self.env._stage_to_regulation)-1,self.env._last_observation.stage[0,0,0]-1+act)))]
             self.env._pandemic_sim.impose_regulation(regulation=regulation)
 
         # update the sim until next regulation interval trigger and construct obs from state hist
