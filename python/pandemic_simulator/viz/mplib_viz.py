@@ -107,6 +107,8 @@ class BaseMatplotLibViz(PandemicViz):
         self._stages.append(obs.stage)
 
     def record_probs(self,prob,lprob):
+        prob=prob.cpu()
+        lprob=lprob.cpu()
         self._prob.append(prob.detach().numpy())
         self._log_prob.append(lprob.detach().numpy())
         self._c_prob.append(prob.detach().numpy())
