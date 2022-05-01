@@ -34,7 +34,7 @@ p_env=  PandemicGymEnvWrapper(env=env,warmup=True)
 config = Config()
 config.seed = 1
 config.environment = p_env
-config.num_episodes_to_run = 8000
+config.num_episodes_to_run = 8000-1220
 config.file_to_save_data_results = "results/data_and_graphs/PandemicSim_Results_Data.pkl"
 config.file_to_save_results_graph = "results/data_and_graphs/PandemicSim_Results_Graph.png"
 config.show_solution_score = False
@@ -144,4 +144,4 @@ if __name__ == "__main__":
     AGENTS = [SAC_Discrete, ]#DDQN, Dueling_DDQN, DQN, DQN_With_Fixed_Q_Targets,
               #DDQN_With_Prioritised_Experience_Replay, A2C, PPO, A3C ]
     trainer = Trainer(config, AGENTS)
-    trainer.run_games_for_agents(load=False)
+    trainer.run_games_for_agents(load=True)
