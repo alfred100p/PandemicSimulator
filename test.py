@@ -119,7 +119,7 @@ config.hyperparameters = {
             "initialiser": "Xavier"
         },
 
-        "min_steps_before_learning": 50,
+        "min_steps_before_learning": 1000,
         "batch_size": 16,
         "discount_rate": 0.99,
         "mu": 0.0, #for O-H noise
