@@ -113,13 +113,13 @@ config.hyperparameters = {
             "linear_hidden_units": [128],
             "final_layer_activation": None,
             "batch_norm": False,
-            "buffer_size": 1000,
+            "buffer_size": 100000,
             "tau": 0.005,
             "gradient_clipping_norm": 5,
             "initialiser": "Xavier"
         },
 
-        "min_steps_before_learning": 1000,
+        "min_steps_before_learning": 10000,
         "batch_size": 1024,
         "discount_rate": 0.99,
         "mu": 0.0, #for O-H noise
