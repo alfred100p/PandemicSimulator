@@ -18,7 +18,7 @@ setup(
         'dataclasses',
         'gym>=0.15.4',
         'istype>=0.2.0',
-        'matplotlib==3.5.1',
+        'matplotlib==3.3.4',
         'networkx',  # for graph analysis
         'numpy==1.19.5',    # 1.20 numpy requires mypy fixes #TODO
         'scipy',
