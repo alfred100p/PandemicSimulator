@@ -1,3 +1,4 @@
+# Confidential, Copyright 2020, Sony Corporation of America, All rights reserved.
 from collections import UserString
 from typing import List, Optional, Dict, Tuple, Mapping, Type, Sequence
 
