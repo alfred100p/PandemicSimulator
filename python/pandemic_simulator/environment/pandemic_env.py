@@ -188,16 +188,19 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
     _last_observation: PandemicObservation
     _last_reward: float
     
-    def __init__(self,env,warmup):
+    def __init__(self,env,warmup_count):
         super(PandemicGymEnvWrapper,self).__init__(env)
         self.env=env
         self.action_space=gym.spaces.Discrete(3,)
-        self.warmup=warmup
-        self.flag=warmup
+        self.warmup_count=warmup_count
+        self.warmup=self.warmup_count>0
+        self.flag=self.warmup_count>0
 
     def reset(self) -> PandemicObservation:
         self.env.reset()
-        self.warmup=True
+        self.warmup_count-=1
+        self.warmup=self.warmup_count>0
+        self.warmup=self.warmup_count>0
         return self.env._last_observation.obs
 
 
