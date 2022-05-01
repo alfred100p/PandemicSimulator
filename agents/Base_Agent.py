@@ -354,7 +354,7 @@ class Base_Agent(object):
         
         if load: 
             
-            net2.load_state_dict(torch.load("Models/123{}_network.pt".format(self.agent_name+name)))
+            net2.load_state_dict(torch.load("/u/alfredwj/home/l5/123{}_network.pt".format(self.agent_name+name)))
         return net2
 
     def turn_on_any_epsilon_greedy_exploration(self):
