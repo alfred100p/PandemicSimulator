@@ -29,7 +29,7 @@ viz = ps.viz.GymViz.from_config(sim_config=sim_config)
 env = ps.env.PandemicGymEnv.from_config(name='test', sim_config=sim_config, pandemic_regulations=ps.sh.austin_regulations,done_fn=ps.env.done.ORDone(done_fns=[ps.env.done.InfectionSummaryAboveThresholdDone(summary_type=ps.env.infection_model.InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),ps.env.done.NoPandemicDone(num_days=30),ps.env.done.NoMoreInfectionsDone()]))
 
 warmup_count=1000
-p_env=  PandemicGymEnvWrapper(env=env,warmup=True,warmup_count=warmup_count)
+p_env=  PandemicGymEnvWrapper(env=env,warmup_count=warmup_count)
 
 config = Config()
 config.seed = 1
