@@ -24,7 +24,7 @@ class PandemicObservation:
     time_day: np.ndarray
     obs: np.array
     unlocked_non_essential_business_locations: Optional[np.ndarray] = None
-    size=len(InfectionSummary)*2+3
+    size=len(InfectionSummary)*2+2
     reward_threshold=10
     
     @classmethod
