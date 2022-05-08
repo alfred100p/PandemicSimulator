@@ -35,7 +35,7 @@ class PandemicGymEnv(gym.Env):
                  reward_fn: Optional[RewardFunction] = None,
                  done_fn: Optional[DoneFunction] = None,
                  obs_history_size: int = 1,
-                 sim_steps_per_regulation: int = 1,
+                 sim_steps_per_regulation: int = 24,
                  non_essential_business_location_ids: Optional[List[LocationID]] = None,
                  ):
         """
