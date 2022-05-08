@@ -42,7 +42,6 @@ class PandemicObservation:
         return PandemicObservation(global_infection_summary=np.zeros((history_size, 1, len(InfectionSummary))),
                                    global_testing_summary=np.zeros((history_size, 1, len(InfectionSummary))),
                                    stage=np.zeros((history_size, 1, 1)),
-                                   infection_above_threshold=np.zeros((history_size, 1, 1)),
                                    time_day=np.zeros((history_size, 1, 1)),
                                    obs=np.zeros(PandemicObservation.size),
                                    unlocked_non_essential_business_locations=np.zeros((history_size, 1,
@@ -65,7 +64,6 @@ class PandemicObservation:
         return PandemicObservation(global_infection_summary=global_infection_summary,
         global_testing_summary=global_testing_summary,
         stage=stage,
-        infection_above_threshold=infection_above_threshold,
         time_day=time_day,
         obs=obs1,
                                    unlocked_non_essential_business_locations=np.zeros((history_size, 1,
@@ -102,21 +100,19 @@ class PandemicObservation:
 
         self.stage[hist_index, 0] = sim_state.regulation_stage
 
-        self.infection_above_threshold[hist_index, 0] = int(sim_state.infection_above_threshold)
 
         self.time_day[hist_index, 0] = int(sim_state.sim_time.day)
 
         self.obs=np.concatenate([gis.reshape(-1)[-1*len(InfectionSummary):],
             gts.reshape(-1)[-1*len(InfectionSummary):],
             np.array([sim_state.regulation_stage,
-            int(sim_state.infection_above_threshold),
             int(sim_state.sim_time.day)])])
 
         #normalization
         self.obs=self.obs.astype('float64')
         self.obs[:10]=self.obs[:10]/np.sum(self.obs[:5])
         self.obs[10]=self.obs[10]/4.0
-        self.obs[12]=self.obs[12]/120.0
+        self.obs[11]=self.obs[11]/120.0
 
     @property
     def infection_summary_labels(self) -> Sequence[str]:
