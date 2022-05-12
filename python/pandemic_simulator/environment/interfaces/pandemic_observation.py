@@ -23,9 +23,8 @@ class PandemicObservation:
     infection_above_threshold: np.ndarray
     time_day: np.ndarray
     obs: np.array
-    obs_mod: Optional[np.array]=None
     unlocked_non_essential_business_locations: Optional[np.ndarray] = None
-    size=len(InfectionSummary)*2+2
+    size=len(InfectionSummary)*2+4
     reward_threshold=10
     
     @classmethod
@@ -46,7 +45,6 @@ class PandemicObservation:
                                    infection_above_threshold=np.zeros((history_size, 1, 1)),
                                    time_day=np.zeros((history_size, 1, 1)),
                                    obs=np.zeros(PandemicObservation.size),
-                                   obs_mod=np.zeros(PandemicObservation.size+1),
                                    unlocked_non_essential_business_locations=np.zeros((history_size, 1,
                                                                                        num_non_essential_business))
                                    if num_non_essential_business is not None else None)
@@ -61,7 +59,7 @@ class PandemicObservation:
         infection_above_threshold=np.zeros((history_size, 1, 1))
         infection_above_threshold[0,0]=obs[11]
         time_day=np.zeros((history_size, 1, 1))
-        time_day[0,0]=obs[11]*120
+        time_day[0,0]=obs[12]*120
         obs1=np.zeros((history_size,1,PandemicObservation.size) )
         obs1[0,0]=obs    
         return PandemicObservation(global_infection_summary=global_infection_summary,
@@ -108,20 +106,19 @@ class PandemicObservation:
 
         self.time_day[hist_index, 0] = int(sim_state.sim_time.day)
 
-        self.obs_mod=np.concatenate([gis.reshape(-1)[-1*len(InfectionSummary):],
+        self.obs=np.concatenate([gis.reshape(-1)[-1*len(InfectionSummary):],
             gts.reshape(-1)[-1*len(InfectionSummary):],
             np.array([sim_state.regulation_stage,
             int(sim_state.infection_above_threshold),
-            int(sim_state.sim_time.day)])])
+            int(sim_state.sim_time.day),
+            int(sim_state.infection_above_threshold_i)])])
 
         #normalization
-        self.obs_mod=self.obs_mod.astype('float64')
-        self.obs_mod[:10]=self.obs_mod[:10]/np.sum(self.obs_mod[:5])
-        self.obs_mod[10]=self.obs_mod[10]/4.0
-        self.obs_mod[12]=self.obs_mod[12]/120.0
+        self.obs=self.obs.astype('float64')
+        self.obs[:10]=self.obs[:10]/np.sum(self.obs[:5])
+        self.obs[10]=self.obs[10]/4.0
+        self.obs[12]=self.obs[12]/120.0
 
-        self.obs=self.obs_mod[:-1]
-        self.obs[-1]=self.obs_mod[-1]
 
     @property
     def infection_summary_labels(self) -> Sequence[str]:
