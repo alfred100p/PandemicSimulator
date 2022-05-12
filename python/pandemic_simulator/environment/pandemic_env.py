@@ -214,7 +214,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
         if self.flag:
             if self.warmup:
                 #print('warmup')
-                if self.env._last_observation.obs_mod[11]:
+                if self.env._last_observation.obs[11]:
                     if self.env._last_observation.stage[0,0,0]<4:
                         return 2
                     else:
@@ -233,7 +233,7 @@ class PandemicGymEnvWrapper(gym.ActionWrapper):
                 return act
         else:
             if self.warmup:
-                if self.env._last_observation.obs_mod[11]:
+                if self.env._last_observation.obs[11]:
                     return 1
                 else:
                     if self.env._last_observation.stage[0,0,0]>0:

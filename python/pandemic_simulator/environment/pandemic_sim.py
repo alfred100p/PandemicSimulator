@@ -120,7 +120,8 @@ class PandemicSim:
             global_location_summary=self._registry.global_location_summary,
             sim_time=SimTime(),
             regulation_stage=0,
-            infection_above_threshold=False
+            infection_above_threshold=False,
+            infection_above_threshold_i=False
         )
         
 
@@ -420,4 +421,5 @@ class PandemicSim:
             sim_time=SimTime(),
             regulation_stage=0,
             infection_above_threshold=False,
+            infection_above_threshold_i=False
         )
