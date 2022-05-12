@@ -326,7 +326,9 @@ class PandemicSim:
                     person.state.test_result = new_test_result
 
             self._state.global_infection_summary = global_infection_summary
-        self._state.infection_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.INFECTED]
+        self._state.infection_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.CRITICAL]
+                                                 >= self._infection_threshold)
+        self._state.infection_above_threshold_i = (self._state.global_testing_state.summary[InfectionSummary.INFECTED]
                                                  >= self._infection_threshold)
 
         self._state.global_location_summary = self._registry.global_location_summary
