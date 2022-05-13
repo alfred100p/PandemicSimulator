@@ -22,15 +22,18 @@ def run_pandemic_gym_env() -> None:
 
     # setup viz
     viz = ps.viz.GymViz.from_config(sim_config=sim_config)
+    sim_viz= ps.viz.SimViz.from_config(sim_config=sim_config)
 
     # run stage-0 action steps in the environment
     env.reset()
     for _ in trange(100, desc='Simulating day'):
         obs, reward, done, aux = env.step(action=0)  # here the action is the discrete regulation stage identifier
         viz.record((obs, reward))
+        sim_viz.record_state(state=env.pandemic_sim.state)
 
     # generate plots
     viz.plot()
+    sim_viz.plot()
 
 
 if __name__ == '__main__':
