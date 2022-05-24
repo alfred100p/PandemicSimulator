@@ -1,7 +1,8 @@
 # Confidential, Copyright 2020, Sony Corporation of America, All rights reserved.
-from typing import List, Optional, Dict, Tuple, Mapping, Type, Sequence
+from typing import List, Optional, Dict, Tuple, Mapping, Type, Sequence, cast
 
 import gym
+import numpy as np
 
 from .done import DoneFunction
 from .interfaces import LocationID, PandemicObservation, NonEssentialBusinessLocationState, PandemicRegulation, \
@@ -21,11 +22,12 @@ class PandemicGymEnv(gym.Env):
     _stage_to_regulation: Mapping[int, PandemicRegulation]
     _obs_history_size: int
     _sim_steps_per_regulation: int
+    _day_limit: int
     _non_essential_business_loc_ids: Optional[List[LocationID]]
     _reward_fn: Optional[RewardFunction]
     _done_fn: Optional[DoneFunction]
 
-    _last_observation: PandemicObservation
+    _last_observation: np.array
     _last_reward: float
 
     def __init__(self,
@@ -35,6 +37,7 @@ class PandemicGymEnv(gym.Env):
                  done_fn: Optional[DoneFunction] = None,
                  obs_history_size: int = 1,
                  sim_steps_per_regulation: int = 24,
+                 day_limit = 120,
                  non_essential_business_location_ids: Optional[List[LocationID]] = None,
                  ):
         """
@@ -50,6 +53,7 @@ class PandemicGymEnv(gym.Env):
         self._stage_to_regulation = {reg.stage: reg for reg in pandemic_regulations}
         self._obs_history_size = obs_history_size
         self._sim_steps_per_regulation = sim_steps_per_regulation
+        self._day_limit = day_limit
 
         if non_essential_business_location_ids is not None:
             for loc_id in non_essential_business_location_ids:
@@ -61,12 +65,37 @@ class PandemicGymEnv(gym.Env):
         self._done_fn = done_fn
 
         self.action_space = gym.spaces.Discrete(len(self._stage_to_regulation))
+        population=len(self.pandemic_sim._persons)
+        self.observation_space_dict = gym.spaces.Dict(
+            {
+                "global infection Summary": gym.spaces.Tuple((gym.spaces.Discrete(population),gym.spaces.Discrete(population),
+            gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population))),
+                "global testing Summary": gym.spaces.Tuple((gym.spaces.Discrete(population),gym.spaces.Discrete(population),
+            gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population))),
+                "stage": gym.spaces.Discrete(len(self._stage_to_regulation)),
+                "day": gym.spaces.Discrete(self._day_limit),
+                "critical above threshold" : gym.spaces.Discrete(2)
+            }
+        )
+        self.observation_space = gym.spaces.Tuple(
+            #gis
+            gym.spaces.Tuple((gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population))),
+            #gts
+            gym.spaces.Tuple((gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population),gym.spaces.Discrete(population))),
+            #stage
+            gym.spaces.Discrete(len(self._stage_to_regulation)),
+            #day
+            gym.spaces.Discrete(self._day_limit),
+            #critical above threshold
+            gym.spaces.Discrete(2)
+        )
 
     @classmethod
     def from_config(cls: Type['PandemicGymEnv'],
                     sim_config: PandemicSimConfig,
                     pandemic_regulations: Sequence[PandemicRegulation],
                     sim_opts: PandemicSimOpts = PandemicSimOpts(),
+                    day_limit = 120,
                     reward_fn: Optional[RewardFunction] = None,
                     done_fn: Optional[DoneFunction] = None,
                     obs_history_size: int = 1,
@@ -117,7 +146,7 @@ class PandemicGymEnv(gym.Env):
         return self._pandemic_sim
 
     @property
-    def observation(self) -> PandemicObservation:
+    def observation(self) -> np.array:
         return self._last_observation
 
     @property
@@ -128,15 +157,12 @@ class PandemicGymEnv(gym.Env):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
         # execute the action if different from the current stage
-        if action != self._last_observation.stage[-1, 0, 0]:  # stage has a TNC layout
+        if action != self._last_observation[10]:  # stage has a TNC layout
             regulation = self._stage_to_regulation[action]
             self._pandemic_sim.impose_regulation(regulation=regulation)
 
         # update the sim until next regulation interval trigger and construct obs from state hist
-        obs = PandemicObservation.create_empty(
-            history_size=self._obs_history_size,
-            num_non_essential_business=len(self._non_essential_business_loc_ids)
-            if self._non_essential_business_loc_ids is not None else None)
+        obs = np.array(len(self.observation_space.shape+1))
 
         hist_index = 0
         for i in range(self._sim_steps_per_regulation):
@@ -145,23 +171,33 @@ class PandemicGymEnv(gym.Env):
 
             # store only the last self._history_size state values
             if i >= (self._sim_steps_per_regulation - self._obs_history_size):
-                obs.update_obs_with_sim_state(self._pandemic_sim.state, hist_index,
-                                              self._non_essential_business_loc_ids)
+                unlocked_non_essential_business_locations = np.asarray([int(not cast(NonEssentialBusinessLocationState,
+                                                                                        self._pandemic_sim.state.id_to_location_state[
+                                                                                            loc_id]).locked)
+                                                                            for loc_id in self._non_essential_business_loc_ids])
+
+                obs[:5] = np.asarray([self._pandemic_sim.state.global_infection_summary[k] for k in self._pandemic_sim.sorted_infection_summary])[None, None, ...]
+
+                obs[5:10] = np.asarray([self._pandemic_sim.state.global_testing_state.summary[k] for k in self._pandemic_sim.sorted_infection_summary])[None, None, ...]
+
+                obs[10] = self._pandemic_sim.state.regulation_stage
+
+                obs[11] = int(self._pandemic_sim.state.infection_above_threshold)
+
+                obs[12] = int(self._pandemic_sim.state.sim_time.day)
+
                 hist_index += 1
 
         prev_obs = self._last_observation
-        self._last_reward = self._reward_fn.calculate_reward(prev_obs, action, obs) if self._reward_fn else 0.
+        self._last_reward = self._reward_fn.calculate_reward(prev_obs, action, obs, unlocked_non_essential_business_locations) if self._reward_fn else 0.
         done = self._done_fn.calculate_done(obs, action) if self._done_fn else False
         self._last_observation = obs
 
         return self._last_observation, self._last_reward, done, {}
 
-    def reset(self) -> PandemicObservation:
+    def reset(self) -> np.array:
         self._pandemic_sim.reset()
-        self._last_observation = PandemicObservation.create_empty(
-            history_size=self._obs_history_size,
-            num_non_essential_business=len(self._non_essential_business_loc_ids)
-            if self._non_essential_business_loc_ids is not None else None)
+        self._last_observation = np.zeros(self.observation_space.shape)
         self._last_reward = 0.0
         if self._done_fn is not None:
             self._done_fn.reset()

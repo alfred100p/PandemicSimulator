@@ -75,6 +75,18 @@ class PandemicObservation:
 
         self.time_day[hist_index, 0] = int(sim_state.sim_time.day)
 
+    def from_obs(self,
+                obs,
+                history_size=1,
+                num_non_essential_business: Optional[int] = None):
+        return PandemicObservation(global_infection_summary=np.zeros((history_size, 1, len(InfectionSummary))),
+                                   global_testing_summary=np.zeros((history_size, 1, len(InfectionSummary))),
+                                   stage=np.zeros((history_size, 1, 1)),
+                                   infection_above_threshold=np.zeros((history_size, 1, 1)),
+                                   time_day=np.zeros((history_size, 1, 1)),
+                                   unlocked_non_essential_business_locations=np.zeros((history_size, 1,
+                                                                                       num_non_essential_business))
+
     @property
     def infection_summary_labels(self) -> Sequence[str]:
         """Return the label for each index in global_infection(or testing)_summary observation entry"""
