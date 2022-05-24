@@ -19,7 +19,7 @@ class SAC_Discrete(SAC):
         assert self.action_types == "DISCRETE", "Action types must be discrete. Use SAC instead for continuous actions"
         assert self.config.hyperparameters["Actor"]["final_layer_activation"] == "Softmax", "Final actor layer must be softmax"
         self.hyperparameters = config.hyperparameters
-        self.i=0
+        self.i=176
         self.critic_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Critic",load=load,name="critic_local")
         self.critic_local_2 = self.create_NN(input_dim=self.state_size, output_dim=self.action_size,
                                            key_to_use="Critic", override_seed=self.config.seed + 1,load=load,name='critic_local_2')
