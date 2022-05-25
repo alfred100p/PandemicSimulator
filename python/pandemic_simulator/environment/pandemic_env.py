@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Tuple, Mapping, Type, Sequence
 
 import gym
 
-from .done import DoneFunction
+from .done import DoneFunction, ORDone, InfectionSummaryAboveThresholdDone, NoPandemicDone
 from .interfaces import LocationID, PandemicObservation, NonEssentialBusinessLocationState, PandemicRegulation, \
     InfectionSummary
 from .pandemic_sim import PandemicSim
@@ -93,16 +93,19 @@ class PandemicGymEnv(gym.Env):
                 RewardFunctionFactory.default(RewardFunctionType.INFECTION_SUMMARY_ABOVE_THRESHOLD,
                                               summary_type=InfectionSummary.CRITICAL,
                                               threshold=sim_config.max_hospital_capacity),
-                RewardFunctionFactory.default(RewardFunctionType.INFECTION_SUMMARY_ABOVE_THRESHOLD,
-                                              summary_type=InfectionSummary.CRITICAL,
-                                              threshold=3 * sim_config.max_hospital_capacity),
                 RewardFunctionFactory.default(RewardFunctionType.LOWER_STAGE,
                                               num_stages=len(pandemic_regulations)),
                 RewardFunctionFactory.default(RewardFunctionType.SMOOTH_STAGE_CHANGES,
                                               num_stages=len(pandemic_regulations))
             ],
-            weights=[.4, 1, .1, 0.02]
+            weights=[.4, .1, 0.02]
         )
+
+        if done_fn==None:
+            done_fn=ORDone(done_fns=[
+                     InfectionSummaryAboveThresholdDone(summary_type=InfectionSummary.CRITICAL,threshold=sim_config.max_hospital_capacity*3),
+                     NoPandemicDone(num_days=30)
+                     ]),
 
         return PandemicGymEnv(pandemic_sim=sim,
                               pandemic_regulations=pandemic_regulations,
