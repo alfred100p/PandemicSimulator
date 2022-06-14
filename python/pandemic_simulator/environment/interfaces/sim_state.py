@@ -38,7 +38,11 @@ class PandemicSimState:
     ((Office, Worker), (School, Minor), etc.)"""
 
     infection_above_threshold: bool
-    """A boolean that is set to True if the infection goes above a set threshold. The threshold is set in the pandemic
+    """A boolean that is set to True if the infection (CRITICAL) goes above a set threshold. The threshold is set in the pandemic
+    sim"""
+
+    infection_above_threshold_i: bool
+    """A boolean that is set to True if the infection (INFECTED) goes above a set threshold. The threshold is set in the pandemic
     sim"""
 
     regulation_stage: int
