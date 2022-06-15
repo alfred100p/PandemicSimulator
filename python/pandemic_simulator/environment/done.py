@@ -9,7 +9,7 @@ import numpy as np
 __all__ = ['DoneFunctionType', 'DoneFunctionFactory', 'ORDone', 'DoneFunction',
            'InfectionSummaryAboveThresholdDone', 'NoMoreInfectionsDone', 'NoPandemicDone']
 
-from .interfaces import PandemicObservation, InfectionSummary, sorted_infection_summary
+from .interfaces import InfectionSummary, sorted_infection_summary
 
 
 class DoneFunction(metaclass=ABCMeta):
@@ -17,7 +17,7 @@ class DoneFunction(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def calculate_done(self, obs: PandemicObservation, action: int) -> bool:
+    def calculate_done(self, obs: np.array, action: int) -> bool:
         pass
 
     def reset(self) -> None:
@@ -70,7 +70,7 @@ class ORDone(DoneFunction):
         super().__init__(*args, **kwargs)
         self._done_fns = done_fns
 
-    def calculate_done(self, obs: PandemicObservation, action: int) -> bool:
+    def calculate_done(self, obs: np.array, action: int) -> bool:
         return any([df.calculate_done(obs, action) for df in self._done_fns])
 
     def reset(self) -> None:
@@ -89,8 +89,8 @@ class InfectionSummaryAboveThresholdDone(DoneFunction):
         assert summary_type in [InfectionSummary.INFECTED, InfectionSummary.CRITICAL, InfectionSummary.DEAD]
         self._index = sorted_infection_summary.index(summary_type)
 
-    def calculate_done(self, obs: PandemicObservation, action: int) -> bool:
-        return bool(np.any(obs.global_infection_summary[..., self._index] > self._threshold))
+    def calculate_done(self, obs: np.array, action: int) -> bool:
+        return bool(np.any(obs[-5 + self._index] > self._threshold))
 
 
 class NoMoreInfectionsDone(DoneFunction):
@@ -104,8 +104,8 @@ class NoMoreInfectionsDone(DoneFunction):
         self._critical_index = sorted_infection_summary.index(InfectionSummary.CRITICAL)
         self._cnt = 0
 
-    def calculate_done(self, obs: PandemicObservation, action: int) -> bool:
-        no_infection = np.sum(obs.global_infection_summary[..., [self._infected_index, self._critical_index]]) == 0
+    def calculate_done(self, obs: np.array, action: int) -> bool:
+        no_infection = obs[-5 + self._infected_index]+obs[-5 + self._critical_index] == 0
         if no_infection and self._cnt > 5:
             return True
         elif no_infection:
@@ -132,9 +132,9 @@ class NoPandemicDone(DoneFunction):
         self._pandemic_exists = False
         self._num_days = num_days
 
-    def calculate_done(self, obs: PandemicObservation, action: int) -> bool:
+    def calculate_done(self, obs: np.array, action: int) -> bool:
         self._pandemic_exists = self._pandemic_exists or np.any(obs.infection_above_threshold)
-        return obs.time_day[-1].item() > self._num_days and not self._pandemic_exists
+        return obs[-6] > self._num_days and not self._pandemic_exists
 
 
 _register_done(DoneFunctionType.INFECTION_SUMMARY_ABOVE_THRESHOLD, InfectionSummaryAboveThresholdDone)
