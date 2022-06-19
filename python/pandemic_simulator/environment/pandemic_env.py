@@ -11,7 +11,7 @@ from .reward import RewardFunction, SumReward, RewardFunctionFactory, RewardFunc
 from .simulator_config import PandemicSimConfig
 from .simulator_opts import PandemicSimOpts
 
-__all__ = ['PandemicGymEnv']
+__all__ = ['PandemicGymEnv', 'PandemicGymEnv3Act']
 
 
 class PandemicGymEnv(gym.Env):
@@ -29,7 +29,7 @@ class PandemicGymEnv(gym.Env):
     _show_gis: bool
 
     _last_observation: np.array
-    _last_true_state: np.array
+    _last_state: np.array
     _last_reward: float
 
     _obs_size: int
@@ -50,7 +50,8 @@ class PandemicGymEnv(gym.Env):
                  critic_true_state = False,
                  show_gis = False,
                  show_day = True,
-                 flags: list=["critical"],
+                 flags: list = ["critical"],
+                 initial_stage = 0,
                  ):
         """
         :param pandemic_sim: Pandemic simulator instance
@@ -77,6 +78,8 @@ class PandemicGymEnv(gym.Env):
 
         obs_index = 0
         state_index = 0
+        self.obs_index_dict = dict()
+        self.state_index_dict = dict()
 
         self.obs_index_dict['stage'] = obs_index
         self.state_index_dict['stage'] = state_index
@@ -117,7 +120,6 @@ class PandemicGymEnv(gym.Env):
         state_index += 1
         
         self.show_day = show_day
-        #make sure day is 6th last 1-5 is gis. 6 is day used in done functions
         if show_day:
             self.obs_index_dict['day'] = obs_index
             obs_index += 1
@@ -129,7 +131,18 @@ class PandemicGymEnv(gym.Env):
         self._state_size = state_index
 
         self.observation_space = gym.spaces.Discrete(obs_index)        
-        self.true_state_space = gym.spaces.Discrete(state_index)
+        self.state_space = gym.spaces.Discrete(state_index)
+
+        state = np.zeros(self._state_size)
+        state[self.state_index_dict['stage']] = initial_stage
+        state[self.state_index_dict['gis']:self.state_index_dict['gis'] + len(sorted_infection_summary)] = list(self._pandemic_sim.state.global_infection_summary.values())
+        state[self.state_index_dict['gts']:self.state_index_dict['gts'] + len(sorted_infection_summary)] = list(self._pandemic_sim.state.global_testing_state.summary.values())
+        state[self.state_index_dict['critical_flag']] = self._pandemic_sim.state.critical_above_threshold
+        state[self.state_index_dict['infected_flag']] = self._pandemic_sim.state.infected_above_threshold
+        state[self.state_index_dict['day']] = self._pandemic_sim.state.sim_time.day
+        self._last_state = state
+        self._last_observation = PandemicGymEnv.state2obs(self, state)
+    
         
         
 
@@ -143,7 +156,8 @@ class PandemicGymEnv(gym.Env):
                     critic_true_state = False,
                     show_gis = False,
                     show_day = True,
-                    flags: list=["critical"],
+                    flags: list = ["critical"],
+                    initial_stage = 0,
                     ) -> 'PandemicGymEnv':
         """
         Creates an instance using config
@@ -189,7 +203,8 @@ class PandemicGymEnv(gym.Env):
                               critic_true_state=critic_true_state,
                               show_gis=show_gis,
                               show_day=show_day,
-                            flags=flags)
+                            flags=flags,
+                            initial_stage=initial_stage)
 
     @property
     def pandemic_sim(self) -> PandemicSim:
@@ -198,45 +213,60 @@ class PandemicGymEnv(gym.Env):
     @property
     def observation(self) -> np.array:
         return self._last_observation
+    
+    @property
+    def state(self) -> np.array:
+        return self._last_state
 
     @property
     def last_reward(self) -> float:
         return self._last_reward
 
+    def state2obs(self, state: np.array) -> np.array:
+        obs = np.zeros(self._state_size)
+        obs[self.state_index_dict['stage']] = state[self.state_index_dict['stage']]
+        obs[self.state_index_dict['gts']:self.state_index_dict['gts']+len(sorted_infection_summary)] = state[self.state_index_dict['gts']:self.state_index_dict['gts']+len(sorted_infection_summary)]
+        if self._show_gis:
+            obs[self.state_index_dict['gis']:self.state_index_dict['gis']+len(sorted_infection_summary)] = state[self.state_index_dict['gis']:self.state_index_dict['gis']+len(sorted_infection_summary)]
+        if self. show_day:
+            obs[self.state_index_dict['day']] = state[self.state_index_dict['day']]
+        if self._critical_flag:
+            obs[self.state_index_dict['critical_flag']] = state[self.state_index_dict['critical_flag']]
+        if self._infected_flag:
+            obs[self.state_index_dict['infected_flag']] = state[self.state_index_dict['infected_flag']]
+        
+        return obs
+
     def step(self, action: int) -> Tuple[PandemicObservation, float, bool, Dict]:
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
         # execute the action if different from the current stage
-        if action != self._last_observation[self._stage_index]:  # stage has a TNC layout
+        if action != self._last_observation[self.obs_index_dict['stage']]:  # stage has a TNC layout
             regulation = self._stage_to_regulation[action]
             self._pandemic_sim.impose_regulation(regulation=regulation)
 
         # update the sim until next regulation interval trigger and construct obs from state hist
-        state = np.array()#self._last_true_state
-        #obs = self._last_observation
-        '''PandemicObservation.create_empty(
-            history_size=self._obs_history_size,
-            num_non_essential_business=len(self._non_essential_business_loc_ids)
-            if self._non_essential_business_loc_ids is not None else None)'''
 
-        hist_index = 0
         for i in range(self._sim_steps_per_regulation):
             # step sim
             self._pandemic_sim.step()
 
-            # store only the last self._history_size state values
-            if self._obs_history:
-                if i >= (self._sim_steps_per_regulation - self._obs_history_size):
-                    obs.update_obs_with_sim_state(self._pandemic_sim.state, hist_index,
-                                                self._non_essential_business_loc_ids)
-                    hist_index += 1
+        state = np.zeros(self._state_size)
+        state[self.state_index_dict['stage']] = action
+        state[self.state_index_dict['gis']:self.state_index_dict['gis'] + len(sorted_infection_summary)] = list(self._pandemic_sim.state.global_infection_summary.values())
+        state[self.state_index_dict['gts']:self.state_index_dict['gts'] + len(sorted_infection_summary)] = list(self._pandemic_sim.state.global_testing_state.summary.values())
+        state[self.state_index_dict['critical_flag']] = self._pandemic_sim.state.critical_above_threshold
+        state[self.state_index_dict['infected_flag']] = self._pandemic_sim.state.infected_above_threshold
+        state[self.state_index_dict['day']] = self._pandemic_sim.state.sim_time.day
+        
 
-        prev_state = self._last_true_state
-        self._last_reward = self._reward_fn.calculate_reward(prev_state, action, state) if self._reward_fn else 0.
-        done = self._done_fn.calculate_done(state, action) if self._done_fn else False
-        self._last_observation = state
+        prev_state = self._last_state
+        self._last_reward = self._reward_fn.calculate_reward(prev_state, action, state, self.state_index_dict) if self._reward_fn else 0.
+        done = self._done_fn.calculate_done(state, action, self.state_index_dict) if self._done_fn else False
+        self._last_state = state
+        self._last_observation = PandemicGymEnv.state2obs(self, state)
 
-        return self._last_observation, self._last_reward, done, {}
+        return self._last_observation, self._last_reward, done, self._last_state, {}
 
     def reset(self) -> PandemicObservation:
         self._pandemic_sim.reset()
@@ -255,19 +285,41 @@ class PandemicGymEnv(gym.Env):
 
 class PandemicGymEnv3Act(gym.ActionWrapper):
     def __init__(self, env: PandemicGymEnv):
-        """Wraps an environment to allow a modular transformation of the :meth:`step` and :meth:`reset` methods.
-        Args:
-            env: The environment to wrap
-        """
         super().__init__(env)
         self.env = env
 
-        self._action_space: Optional[gym.spaces.Space] = None
+        self.action_space = gym.spaces.Discrete(3, start=-1)
+
+    @classmethod
+    def from_config(self,
+                    sim_config: PandemicSimConfig,
+                    pandemic_regulations: Sequence[PandemicRegulation],
+                    sim_opts: PandemicSimOpts = PandemicSimOpts(),
+                    reward_fn: Optional[RewardFunction] = None,
+                    done_fn: Optional[DoneFunction] = None,
+                    critic_true_state = False,
+                    show_gis = False,
+                    show_day = True,
+                    flags: list = ["critical"],
+                    initial_stage = 0,
+                    ) -> 'PandemicGymEnv3Act':
+        self.action_space = gym.spaces.Discrete(3, start=-1)
+        self.env = PandemicGymEnv.from_config(sim_config = sim_config,
+        pandemic_regulations=pandemic_regulations,
+        sim_opts = sim_opts,
+        reward_fn=reward_fn,
+        done_fn=done_fn,
+        critic_true_state=critic_true_state,
+        show_gis=show_gis,
+        show_day=show_day,
+        flags=flags,
+        initial_stage=initial_stage)
+
+        return self
     
     def step(self, action):
-        """Runs the environment :meth:`env.step` using the modified ``action`` from :meth:`self.action`."""
-        return self.env.step(self.action(action))
+        return self.env.step(int(self.action(self, action)))
 
     def action(self, action):
-        """Returns a modified action before :meth:`env.step` is called."""
-        raise NotImplementedError
+        assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
+        return min(4, max(0, self.env._last_state[self.env.state_index_dict['stage']] + action))

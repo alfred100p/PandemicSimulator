@@ -17,7 +17,7 @@ class DoneFunction(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def calculate_done(self, obs: np.array, action: int) -> bool:
+    def calculate_done(self, state: np.array, action: int, index_dict: dict) -> bool:
         pass
 
     def reset(self) -> None:
@@ -70,8 +70,8 @@ class ORDone(DoneFunction):
         super().__init__(*args, **kwargs)
         self._done_fns = done_fns
 
-    def calculate_done(self, obs: np.array, action: int) -> bool:
-        return any([df.calculate_done(obs, action) for df in self._done_fns])
+    def calculate_done(self, state: np.array, action: int, index_dict: dict) -> bool:
+        return any([df.calculate_done(state, action, index_dict) for df in self._done_fns])
 
     def reset(self) -> None:
         for done_fn in self._done_fns:
@@ -89,24 +89,25 @@ class InfectionSummaryAboveThresholdDone(DoneFunction):
         assert summary_type in [InfectionSummary.INFECTED, InfectionSummary.CRITICAL, InfectionSummary.DEAD]
         self._index = sorted_infection_summary.index(summary_type)
 
-    def calculate_done(self, obs: np.array, action: int) -> bool:
-        return bool(np.any(obs[-5 + self._index] > self._threshold))
+    def calculate_done(self, state: np.array, action: int, index_dict: dict) -> bool:
+        return bool(state[index_dict['gis'] + self._index] > self._threshold)
 
 
 class NoMoreInfectionsDone(DoneFunction):
     """Returns True if the number of infected and critical becomes zero and all have recovered."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, threshold=5, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._infected_index = sorted_infection_summary.index(InfectionSummary.INFECTED)
         self._recovered_index = sorted_infection_summary.index(InfectionSummary.RECOVERED)
         self._dead_index = sorted_infection_summary.index(InfectionSummary.DEAD)
         self._critical_index = sorted_infection_summary.index(InfectionSummary.CRITICAL)
         self._cnt = 0
+        self.threshold = threshold
 
-    def calculate_done(self, obs: np.array, action: int) -> bool:
-        no_infection = obs[-5 + self._infected_index]+obs[-5 + self._critical_index] == 0
-        if no_infection and self._cnt > 5:
+    def calculate_done(self, state: np.array, action: int, index_dict: dict) -> bool:
+        no_infection = state[index_dict['gis'] + self._infected_index]+state[index_dict['gis'] + self._critical_index] == 0
+        if no_infection and self._cnt > self.threshold:
             return True
         elif no_infection:
             self._cnt += 1
@@ -132,9 +133,9 @@ class NoPandemicDone(DoneFunction):
         self._pandemic_exists = False
         self._num_days = num_days
 
-    def calculate_done(self, obs: np.array, action: int) -> bool:
-        self._pandemic_exists = self._pandemic_exists or np.any(obs.infection_above_threshold)
-        return obs[-6] > self._num_days and not self._pandemic_exists
+    def calculate_done(self, state: np.array, action: int, index_dict: dict) -> bool:
+        self._pandemic_exists = self._pandemic_exists or state[index_dict['critical_flag']] or state[index_dict['infected_flag']]
+        return state[index_dict['day']] > self._num_days and not self._pandemic_exists
 
 
 _register_done(DoneFunctionType.INFECTION_SUMMARY_ABOVE_THRESHOLD, InfectionSummaryAboveThresholdDone)

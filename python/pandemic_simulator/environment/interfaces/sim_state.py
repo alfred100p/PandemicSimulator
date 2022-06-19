@@ -37,11 +37,11 @@ class PandemicSimState:
     """A mapping that holds summary statistics (usually cumulative) for each location and person type tuple -
     ((Office, Worker), (School, Minor), etc.)"""
 
-    infection_above_threshold: bool
+    critical_above_threshold: bool
     """A boolean that is set to True if the infection (CRITICAL) goes above a set threshold. The threshold is set in the pandemic
     sim"""
 
-    infection_above_threshold_i: bool
+    infected_above_threshold: bool
     """A boolean that is set to True if the infection (INFECTED) goes above a set threshold. The threshold is set in the pandemic
     sim"""
 

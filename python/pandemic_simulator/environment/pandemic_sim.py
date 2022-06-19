@@ -115,8 +115,8 @@ class PandemicSim:
             global_location_summary=self._registry.global_location_summary,
             sim_time=SimTime(),
             regulation_stage=0,
-            infection_above_threshold=False,
-            infection_above_threshold_i=False,
+            critical_above_threshold=False,
+            infected_above_threshold=False,
         )
 
     @classmethod
@@ -316,9 +316,9 @@ class PandemicSim:
                     person.state.test_result = new_test_result
 
             self._state.global_infection_summary = global_infection_summary
-        self._state.infection_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.CRITICAL]
+        self._state.critical_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.CRITICAL]
                                                  >= self._infection_threshold)
-        self._state.infection_above_threshold_i = (self._state.global_testing_state.summary[InfectionSummary.INFECTED]
+        self._state.infected_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.INFECTED]
                                                  >= self._infection_threshold_i)
 
         self._state.global_location_summary = self._registry.global_location_summary
@@ -409,6 +409,6 @@ class PandemicSim:
                                                     num_tests=0),
             sim_time=SimTime(),
             regulation_stage=0,
-            infection_above_threshold=False,
-            infection_above_threshold_i=False,
+            critical_above_threshold=False,
+            infected_above_threshold=False,
         )
