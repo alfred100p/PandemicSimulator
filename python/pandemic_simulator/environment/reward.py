@@ -11,7 +11,7 @@ __all__ = ['RewardFunction', 'RewardFunctionType', 'RewardFunctionFactory', 'Sum
            'InfectionSummaryAboveThresholdReward', 'LowerStageReward', 'InfectionSummaryAbsoluteReward',
            'SmoothStageChangesReward']
 
-from .interfaces import PandemicObservation, InfectionSummary, sorted_infection_summary
+from .interfaces import InfectionSummary, sorted_infection_summary
 
 
 class RewardFunction(metaclass=ABCMeta):
@@ -19,7 +19,7 @@ class RewardFunction(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def calculate_reward(self, prev_obs: PandemicObservation, action: int, obs: PandemicObservation) -> float:
+    def calculate_reward(self, prev_state: np.array, action: int, state: np.array, index_dict: dict) -> float:
         pass
 
 
@@ -80,8 +80,8 @@ class SumReward(RewardFunction):
         self._weights = np.asarray(weights)
         self._reward_fns = reward_fns
 
-    def calculate_reward(self, prev_obs: PandemicObservation, action: int, obs: PandemicObservation) -> float:
-        rewards = np.array([rf.calculate_reward(prev_obs, action, obs) for rf in self._reward_fns])
+    def calculate_reward(self, prev_state: np.array, action: int, state: np.array, index_dict: dict) -> float:
+        rewards = np.array([rf.calculate_reward(prev_state, action, state, index_dict) for rf in self._reward_fns])
         return float(np.sum(rewards * self._weights))
 
 
@@ -94,12 +94,12 @@ class InfectionSummaryIncreaseReward(RewardFunction):
         assert summary_type in [InfectionSummary.INFECTED, InfectionSummary.CRITICAL, InfectionSummary.DEAD]
         self._index = sorted_infection_summary.index(summary_type)
 
-    def calculate_reward(self, prev_obs: PandemicObservation, action: int, obs: PandemicObservation) -> float:
-        prev_summary = prev_obs.global_infection_summary[..., self._index]
-        summary = obs.global_infection_summary[..., self._index]
+    def calculate_reward(self, prev_state: np.array, action: int, state: np.array, index_dict: dict) -> float:
+        prev_summary = prev_state[index_dict['gis'] + self._index]
+        summary = state[index_dict['gis'] + self._index]
         if np.any(prev_summary == 0):
             return 0
-        return -1 * float(np.clip((summary - prev_summary) / prev_summary, 0, np.inf).mean())
+        return -1 * float(min(max((summary - prev_summary) / prev_summary, 0), np.inf))
 
 
 class InfectionSummaryAbsoluteReward(RewardFunction):
@@ -111,8 +111,8 @@ class InfectionSummaryAbsoluteReward(RewardFunction):
         assert summary_type in [InfectionSummary.INFECTED, InfectionSummary.CRITICAL, InfectionSummary.DEAD]
         self._index = sorted_infection_summary.index(summary_type)
 
-    def calculate_reward(self, prev_obs: PandemicObservation, action: int, obs: PandemicObservation) -> float:
-        return float(-1 * np.mean(obs.global_infection_summary[..., self._index]))
+    def calculate_reward(self, prev_state: np.array, action: int, state: np.array, index_dict: dict) -> float:
+        return float(-1 * state[index_dict['gis'] + self._index])
 
 
 class InfectionSummaryAboveThresholdReward(RewardFunction):
@@ -126,30 +126,32 @@ class InfectionSummaryAboveThresholdReward(RewardFunction):
         assert summary_type in [InfectionSummary.INFECTED, InfectionSummary.CRITICAL, InfectionSummary.DEAD]
         self._index = sorted_infection_summary.index(summary_type)
 
-    def calculate_reward(self, prev_obs: PandemicObservation, action: int, obs: PandemicObservation) -> float:
-        return float(-1 * max(np.mean(obs.global_infection_summary[..., self._index]
+    def calculate_reward(self, prev_state: np.array, action: int, state: np.array, index_dict: dict) -> float:
+        return float(-1 * max((state[index_dict['gis'] + self._index]
                                       - self._threshold) / self._threshold, 0))
+
 
 
 class UnlockedBusinessLocationsReward(RewardFunction):
     """Returns a positive reward proportional to the number of unlocked business locations."""
-    _obs_indices: Optional[Sequence[int]] = None
+    _state_indices: Optional[Sequence[int]] = None
 
-    def __init__(self, obs_indices: Optional[Sequence[int]] = None, *args: Any, **kwargs: Any):
+    def __init__(self, state_indices: Optional[Sequence[int]] = None, *args: Any, **kwargs: Any):
         """
-        :param obs_indices: indices of certain business locations in obs to use. If None, all business location ids
+        :param state_indices: indices of certain business locations in state to use. If None, all business location ids
             are used.
         """
         super().__init__(*args, **kwargs)
-        self._obs_indices = obs_indices
+        self._state_indices = state_indices
 
-    def calculate_reward(self, prev_obs: PandemicObservation, action: int, obs: PandemicObservation) -> float:
-        if obs.unlocked_non_essential_business_locations is None:
+    def calculate_reward(self, prev_state: np.array, action: int, state: np.array, index_dict: dict) -> float:
+        if state.unlocked_non_essential_business_locations is None:
             return 0.
         else:
-            unlocked_locations = (obs.unlocked_non_essential_business_locations if self._obs_indices is None
-                                  else obs.unlocked_non_essential_business_locations[..., self._obs_indices])
+            unlocked_locations = (state.unlocked_non_essential_business_locations if self._state_indices is None
+                                  else state.unlocked_non_essential_business_locations[..., self._state_indices])
             return float(np.mean(unlocked_locations))
+
 
 
 class LowerStageReward(RewardFunction):
@@ -164,7 +166,7 @@ class LowerStageReward(RewardFunction):
         stage_rewards = np.arange(0, num_stages) ** 1.5
         self._stage_rewards = stage_rewards / np.max(stage_rewards)
 
-    def calculate_reward(self, prev_obs: PandemicObservation, action: int, obs: PandemicObservation) -> float:
+    def calculate_reward(self, prev_state: np.array, action: int, state: np.array, index_dict: dict) -> float:
         return -float(self._stage_rewards[action])
 
 
@@ -173,13 +175,13 @@ class SmoothStageChangesReward(RewardFunction):
     def __init__(self, num_stages: int, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-    def calculate_reward(self, prev_obs: PandemicObservation, action: int, obs: PandemicObservation) -> float:
-        return float(-1 * np.abs(obs.stage - prev_obs.stage).mean())
+    def calculate_reward(self, prev_state: np.array, action: int, state: np.array, index_dict: dict) -> float:
+        return float(-1 * abs(state[index_dict['stage']] - prev_state[index_dict['stage']]))
 
 
 _register_reward(RewardFunctionType.INFECTION_SUMMARY_INCREASE, InfectionSummaryIncreaseReward)
 _register_reward(RewardFunctionType.INFECTION_SUMMARY_ABOVE_THRESHOLD, InfectionSummaryAboveThresholdReward)
 _register_reward(RewardFunctionType.INFECTION_SUMMARY_ABSOLUTE, InfectionSummaryAbsoluteReward)
-_register_reward(RewardFunctionType.UNLOCKED_BUSINESS_LOCATIONS, UnlockedBusinessLocationsReward)
+#_register_reward(RewardFunctionType.UNLOCKED_BUSINESS_LOCATIONS, UnlockedBusinessLocationsReward)
 _register_reward(RewardFunctionType.LOWER_STAGE, LowerStageReward)
 _register_reward(RewardFunctionType.SMOOTH_STAGE_CHANGES, SmoothStageChangesReward)

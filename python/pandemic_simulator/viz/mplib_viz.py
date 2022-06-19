@@ -8,10 +8,11 @@ from cycler import cycler
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.ticker import MaxNLocator
+from pyrsistent import s
 
 from .evaluation_plots import inf_colors
 from .pandemic_viz import PandemicViz
-from ..environment import PandemicObservation, InfectionSummary, PandemicSimState, PandemicSimConfig
+from ..environment import PandemicObservation, InfectionSummary, PandemicSimState, PandemicSimConfig, sorted_infection_summary
 
 __all__ = ['BaseMatplotLibViz', 'SimViz', 'GymViz', 'PlotType']
 
@@ -73,19 +74,17 @@ class BaseMatplotLibViz(PandemicViz):
     def from_config(cls: Type['BaseMatplotLibViz'], sim_config: PandemicSimConfig) -> 'BaseMatplotLibViz':
         return cls(num_persons=sim_config.num_persons, max_hospital_capacity=sim_config.max_hospital_capacity)
 
-    def record_obs(self, obs: PandemicObservation) -> None:
+    def record_obs(self, obs: np.array, index_dict: dict) -> None:
         if len(self._gis_legend) == 0:
-            self._gis_legend = list(obs.infection_summary_labels)
+            self._gis_legend = [k.value for k in sorted_infection_summary]
             self._critical_index = self._gis_legend.index(InfectionSummary.CRITICAL.value)
 
-        self._gis.append(obs.global_infection_summary)
-        self._gts.append(obs.global_testing_summary)
-        self._stages.append(obs.stage)
+        self._gis.append(obs[index_dict['gis']: index_dict['gis'] + len(sorted_infection_summary)])
+        self._gts.append(obs[index_dict['gts']: index_dict['gts'] + len(sorted_infection_summary)])
+        self._stages.append(obs[index_dict['stage']])
 
-    def record_state(self, state: PandemicSimState) -> None:
-        obs = PandemicObservation.create_empty()
-        obs.update_obs_with_sim_state(state)
-        self.record_obs(obs=obs)
+    def record_state(self, state: PandemicSimState, obs:np.array, index_dict:dict) -> None:
+        self.record_obs(obs = obs, index_dict = index_dict)
 
     def record(self, data: Any) -> None:
         if isinstance(data, PandemicSimState):
@@ -120,7 +119,7 @@ class BaseMatplotLibViz(PandemicViz):
     def plot_critical_summary(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
         ax = ax or plt.gca()
         gis = np.vstack(self._gis).squeeze()
-        ax.plot(gis[:, self._critical_index])
+        ax.plot(gis[:,self._critical_index])
         ax.plot(np.arange(gis.shape[0]), np.ones(gis.shape[0]) * self._max_hospital_capacity, 'y')
         ax.legend([InfectionSummary.CRITICAL.value, 'Max hospital capacity'], loc=1)
         ax.set_ylim(-0.1, self._max_hospital_capacity * 3)
@@ -131,7 +130,7 @@ class BaseMatplotLibViz(PandemicViz):
 
     def plot_stages(self, ax: Optional[Axes] = None, **kwargs: Any) -> None:
         ax = ax or plt.gca()
-        stages = np.concatenate(self._stages).squeeze()
+        stages = self._stages
         ax.plot(stages)
         ax.set_ylim(-0.1, kwargs.get('num_stages', np.max(self._stages)) + 1)
         ax.set_title('Stage')
@@ -189,8 +188,8 @@ class SimViz(BaseMatplotLibViz):
         self._loc_types = []
         self._person_types = []
 
-    def record_state(self, state: PandemicSimState) -> None:
-        super().record_state(state)
+    def record_state(self, state: PandemicSimState, obs:np.array, index_dict:dict) -> None:
+        super().record_state(state, obs, index_dict)
 
         if len(self._loc_types) == 0:
             self._loc_types = sorted(set(k[0] for k in state.global_location_summary.keys()))
@@ -274,11 +273,11 @@ class GymViz(BaseMatplotLibViz):
         ax.set_title('Cumulative Reward')
         ax.set_xlabel('time (days)')
 
-    def record(self, data: Any) -> None:
+    def record(self, data: Any, index_dict: dict) -> None:
         if isinstance(data, tuple):
             obs, reward = data
             self._rewards.append(reward)
         else:
             obs = data
-        assert isinstance(obs, PandemicObservation)
-        self.record_obs(obs)
+        #assert isinstance(obs, np.array)
+        self.record_obs(obs, index_dict)

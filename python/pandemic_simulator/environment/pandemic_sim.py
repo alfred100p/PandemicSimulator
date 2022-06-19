@@ -41,6 +41,7 @@ class PandemicSim:
     _new_time_slot_interval: SimTimeInterval
     _infection_update_interval: SimTimeInterval
     _infection_threshold: int
+    _infection_threshold_i: int
     _numpy_rng: np.random.RandomState
 
     _type_to_locations: DefaultDict
@@ -57,7 +58,8 @@ class PandemicSim:
                  new_time_slot_interval: SimTimeInterval = SimTimeInterval(day=1),
                  infection_update_interval: SimTimeInterval = SimTimeInterval(day=1),
                  person_routine_assignment: Optional[PersonRoutineAssignment] = None,
-                 infection_threshold: int = 0):
+                 infection_threshold: int = 0,
+                 infection_threshold_i: int = 0):
         """
         :param locations: A sequence of Location instances.
         :param persons: A sequence of Person instances.
@@ -86,6 +88,7 @@ class PandemicSim:
         self._new_time_slot_interval = new_time_slot_interval
         self._infection_update_interval = infection_update_interval
         self._infection_threshold = infection_threshold
+        self._infection_threshold_i = infection_threshold_i
 
         self._type_to_locations = defaultdict(list)
         for loc in locations:
@@ -112,7 +115,8 @@ class PandemicSim:
             global_location_summary=self._registry.global_location_summary,
             sim_time=SimTime(),
             regulation_stage=0,
-            infection_above_threshold=False
+            critical_above_threshold=False,
+            infected_above_threshold=False,
         )
 
     @classmethod
@@ -159,6 +163,7 @@ class PandemicSim:
                            pandemic_testing=pandemic_testing,
                            contact_tracer=contact_tracer,
                            infection_threshold=sim_opts.infection_threshold,
+                           infection_threshold_i=sim_opts.infection_threshold_i,
                            person_routine_assignment=sim_config.person_routine_assignment)
 
     @property
@@ -312,8 +317,10 @@ class PandemicSim:
                     person.state.test_result = new_test_result
 
             self._state.global_infection_summary = global_infection_summary
-        self._state.infection_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.CRITICAL]
+        self._state.critical_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.CRITICAL]
                                                  >= self._infection_threshold)
+        self._state.infected_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.INFECTED]
+                                                 >= self._infection_threshold_i)
 
         self._state.global_location_summary = self._registry.global_location_summary
 
@@ -403,5 +410,6 @@ class PandemicSim:
                                                     num_tests=0),
             sim_time=SimTime(),
             regulation_stage=0,
-            infection_above_threshold=False,
+            critical_above_threshold=False,
+            infected_above_threshold=False,
         )
