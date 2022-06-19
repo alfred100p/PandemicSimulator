@@ -1,6 +1,6 @@
 # Confidential, Copyright 2020, Sony Corporation of America, All rights reserved.
 
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, UserString
 from itertools import product as cartesianproduct, combinations
 from typing import DefaultDict, Dict, List, Optional, Sequence, cast, Type
 
@@ -22,8 +22,8 @@ from .simulator_opts import PandemicSimOpts
 __all__ = ['PandemicSim', 'make_locations']
 
 
-def make_locations(sim_config: PandemicSimConfig) -> List[Location]:
-    return [config.location_type(loc_id=f'{config.location_type.__name__}_{i}',
+def make_locations(sim_config: PandemicSimConfig, name: Optional[UserString]=None) -> List[Location]:
+    return [config.location_type(loc_id=name+f'{config.location_type.__name__}_{i}',
                                  init_state=config.location_type.state_type(**config.state_opts),
                                  **config.extra_opts)  # type: ignore
             for config in sim_config.location_configs for i in range(config.num)]
@@ -122,7 +122,8 @@ class PandemicSim:
     @classmethod
     def from_config(cls: Type['PandemicSim'],
                     sim_config: PandemicSimConfig,
-                    sim_opts: PandemicSimOpts = PandemicSimOpts()) -> 'PandemicSim':
+                    sim_opts: PandemicSimOpts = PandemicSimOpts(),
+                    name: Optional[UserString]=None) -> 'PandemicSim':
         """
         Creates an instance using config
 
@@ -133,7 +134,7 @@ class PandemicSim:
         assert globals.registry, 'No registry found. Create the repo wide registry first by calling init_globals()'
 
         # make locations
-        locations = make_locations(sim_config)
+        locations = make_locations(sim_config, name)
 
         # make population
         persons = make_population(sim_config)

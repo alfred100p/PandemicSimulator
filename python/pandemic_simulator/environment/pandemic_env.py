@@ -5,11 +5,13 @@ import gym
 import numpy as np
 
 from .done import DoneFunction, ORDone, InfectionSummaryAboveThresholdDone, NoPandemicDone
+
 from .interfaces import LocationID, PandemicObservation, NonEssentialBusinessLocationState, PandemicRegulation, InfectionSummary, sorted_infection_summary
 from .pandemic_sim import PandemicSim
 from .reward import RewardFunction, SumReward, RewardFunctionFactory, RewardFunctionType
 from .simulator_config import PandemicSimConfig
 from .simulator_opts import PandemicSimOpts
+from collections import UserString
 
 __all__ = ['PandemicGymEnv', 'PandemicGymEnv3Act']
 
@@ -153,6 +155,7 @@ class PandemicGymEnv(gym.Env):
                     sim_opts: PandemicSimOpts = PandemicSimOpts(),
                     reward_fn: Optional[RewardFunction] = None,
                     done_fn: Optional[DoneFunction] = None,
+                    name: Optional[UserString]=None,
                     critic_true_state = False,
                     show_gis = False,
                     show_day = True,
@@ -171,7 +174,7 @@ class PandemicGymEnv(gym.Env):
         :param non_essential_business_location_ids: an ordered list of non-essential business location ids
         :param critic_true_state: if an actor critic metod is being used and if the critic views the true environment state not just the observation, this refers to if critic can view global infection summary not just gloabl testing summary.
         """
-        sim = PandemicSim.from_config(sim_config, sim_opts)
+        sim = PandemicSim.from_config(sim_config, sim_opts, name)
 
         if sim_config.max_hospital_capacity == -1:
             raise Exception("Nothing much to optimise if max hospital capacity is -1.")
