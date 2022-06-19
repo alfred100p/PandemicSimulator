@@ -4,12 +4,12 @@ from typing import List, Optional, Dict, Tuple, Mapping, Type, Sequence
 import gym
 
 from .done import DoneFunction, ORDone, InfectionSummaryAboveThresholdDone, NoPandemicDone
-from .interfaces import LocationID, PandemicObservation, NonEssentialBusinessLocationState, PandemicRegulation, \
-    InfectionSummary
+from .interfaces import LocationID, PandemicObservation, NonEssentialBusinessLocationState, PandemicRegulation, InfectionSummary
 from .pandemic_sim import PandemicSim
 from .reward import RewardFunction, SumReward, RewardFunctionFactory, RewardFunctionType
 from .simulator_config import PandemicSimConfig
 from .simulator_opts import PandemicSimOpts
+from collections import UserString
 
 __all__ = ['PandemicGymEnv']
 
@@ -71,6 +71,7 @@ class PandemicGymEnv(gym.Env):
                     done_fn: Optional[DoneFunction] = None,
                     obs_history_size: int = 1,
                     non_essential_business_location_ids: Optional[List[LocationID]] = None,
+                    name: Optional[UserString]=None,
                     ) -> 'PandemicGymEnv':
         """
         Creates an instance using config
@@ -83,7 +84,7 @@ class PandemicGymEnv(gym.Env):
         :param obs_history_size: number of latest sim step states to include in the observation
         :param non_essential_business_location_ids: an ordered list of non-essential business location ids
         """
-        sim = PandemicSim.from_config(sim_config, sim_opts)
+        sim = PandemicSim.from_config(sim_config, sim_opts, name)
 
         if sim_config.max_hospital_capacity == -1:
             raise Exception("Nothing much to optimise if max hospital capacity is -1.")
