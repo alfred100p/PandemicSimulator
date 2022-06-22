@@ -1,3 +1,4 @@
+<a href="/scripts/tutorials/readme.md">Click here for Peter Stone's Class</a><br>
 # PandemicSimulator
 
 This repository implements an agent-based pandemic simulator to analyse and optimize 
