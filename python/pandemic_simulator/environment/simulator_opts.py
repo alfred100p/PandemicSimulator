@@ -41,8 +41,8 @@ class PandemicSimOpts:
     contact_tracer_history_size: int = 5
     """Contact tracer history size. Only used if use_contact_tracer is True."""
 
-    infection_threshold: int = 10
+    critical_threshold: int = 10
     """A threshold used by """
 
-    infection_threshold_i: int = 100
+    infection_threshold: int = 100
     """A threshold used by """

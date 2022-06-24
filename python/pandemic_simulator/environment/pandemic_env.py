@@ -2,6 +2,7 @@
 from typing import List, Optional, Dict, Tuple, Mapping, Type, Sequence
 
 import gym
+from istype import isinstanceof
 import numpy as np
 
 from .done import DoneFunction, ORDone, InfectionSummaryAboveThresholdDone, NoPandemicDone
@@ -29,6 +30,8 @@ class PandemicGymEnv(gym.Env):
     _infected_flag: bool
     _show_day: bool
     _show_gis: bool
+    _random_init_population: bool
+    _seed: int
 
     _last_observation: np.array
     _last_state: np.array
@@ -54,6 +57,8 @@ class PandemicGymEnv(gym.Env):
                  show_day = True,
                  flags: list = ["critical"],
                  initial_stage = 0,
+                 random_init_population = False,
+                 seed = 0,
                  ):
         """
         :param pandemic_sim: Pandemic simulator instance
@@ -71,10 +76,12 @@ class PandemicGymEnv(gym.Env):
         self._pandemic_sim = pandemic_sim
         self._stage_to_regulation = {reg.stage: reg for reg in pandemic_regulations}
         self._sim_steps_per_regulation = sim_steps_per_regulation
+        self._random_init_population = random_init_population
 
         self._reward_fn = reward_fn
         self._done_fn = done_fn
         self._critic_true_state = critic_true_state
+        self._seed = 0
 
         self.action_space = gym.spaces.Discrete(len(self._stage_to_regulation))
 
@@ -161,7 +168,8 @@ class PandemicGymEnv(gym.Env):
                     show_day = True,
                     flags: list = ["critical"],
                     initial_stage = 0,
-                    ) -> 'PandemicGymEnv':
+                    random_init_population = False,
+                    seed = 0) -> 'PandemicGymEnv':
         """
         Creates an instance using config
 
@@ -207,7 +215,9 @@ class PandemicGymEnv(gym.Env):
                               show_gis=show_gis,
                               show_day=show_day,
                             flags=flags,
-                            initial_stage=initial_stage)
+                            initial_stage=initial_stage,
+                            random_init_population = random_init_population,
+                            seed = seed,)
 
     @property
     def pandemic_sim(self) -> PandemicSim:
@@ -216,6 +226,46 @@ class PandemicGymEnv(gym.Env):
     @property
     def observation(self) -> np.array:
         return self._last_observation
+
+    def print_obs(self):
+
+        print("Current Stage: "+str(self._last_observation[self.obs_index_dict['stage']]))
+        print("Not Infected: "+str(self._last_observation[self.obs_index_dict['gts']+3]))
+        print("Infected: "+str(self._last_observation[self.obs_index_dict['gts']+2]))
+        print("Critical: "+str(self._last_observation[self.obs_index_dict['gts']]))
+        print("Recovered: "+str(self._last_observation[self.obs_index_dict['gts']+4]))
+        print("Dead: "+str(self._last_observation[self.obs_index_dict['gts']+1]))
+        if self._critical_flag:
+            print("Critical Flag: "+str(bool(self._last_observation[self.obs_index_dict['critical_flag']])))
+        if self._infected_flag:
+            print("Infected Flag: "+str(bool(self._last_observation[self.obs_index_dict['infected_flag']])))
+        if self.show_day:
+            print("Day: "+str(self._last_observation[self.obs_index_dict['day']]))
+        
+        return None
+    
+    def print_state(self):
+
+        print("Current Stage: "+str(self._last_state[self.obs_index_dict['stage']]))
+        print("Actual Not Infected: "+str(self._last_state[self.obs_index_dict['gis']+3]))
+        print("Actual Infected: "+str(self._last_state[self.obs_index_dict['gis']+2]))
+        print("Actual Critical: "+str(self._last_state[self.obs_index_dict['gis']]))
+        print("Actual Recovered: "+str(self._last_state[self.obs_index_dict['gis']+4]))
+        print("Actual Dead: "+str(self._last_state[self.obs_index_dict['gis']+1]))
+        print("Tested Not Infected: "+str(self._last_state[self.obs_index_dict['gts']]))
+        print("Tested Infected: "+str(self._last_state[self.obs_index_dict['gts']+1]))
+        print("Tested Critical: "+str(self._last_state[self.obs_index_dict['gts']+2]))
+        print("Tested Recovered: "+str(self._last_state[self.obs_index_dict['gts']+3]))
+        print("Tested Dead: "+str(self._last_state[self.obs_index_dict['gts']+4]))
+        print("Critical Flag: "+str(self._last_state[self.obs_index_dict['critical_flag']]))
+        print("Infected Flag: "+str(self._last_state[self.obs_index_dict['infected_flag']]))
+        print("Day: "+str(self._last_state[self.obs_index_dict['day']]))
+        
+        return None
+        
+        
+        
+        
     
     @property
     def state(self) -> np.array:
@@ -272,7 +322,8 @@ class PandemicGymEnv(gym.Env):
         return self._last_observation, self._last_reward, done, self._last_state, {}
 
     def reset(self) -> PandemicObservation:
-        self._pandemic_sim.reset()
+        self._seed += 1
+        self._pandemic_sim.reset(random = self._random_init_population, seed = self._seed)
         self._last_observation = np.zeros(self._obs_size)
         '''PandemicObservation.create_empty(
             history_size=self._obs_history_size,
@@ -295,6 +346,7 @@ class PandemicGymEnv3Act(gym.ActionWrapper):
 
     @classmethod
     def from_config(self,
+                    name: UserString,
                     sim_config: PandemicSimConfig,
                     pandemic_regulations: Sequence[PandemicRegulation],
                     sim_opts: PandemicSimOpts = PandemicSimOpts(),
@@ -308,6 +360,7 @@ class PandemicGymEnv3Act(gym.ActionWrapper):
                     ) -> 'PandemicGymEnv3Act':
         self.action_space = gym.spaces.Discrete(3, start=-1)
         self.env = PandemicGymEnv.from_config(sim_config = sim_config,
+        name = name,
         pandemic_regulations=pandemic_regulations,
         sim_opts = sim_opts,
         reward_fn=reward_fn,

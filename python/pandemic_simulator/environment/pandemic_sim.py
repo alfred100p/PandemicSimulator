@@ -1,6 +1,6 @@
 # Confidential, Copyright 2020, Sony Corporation of America, All rights reserved.
 
-from collections import defaultdict, OrderedDict, UserString
+from collections import UserString, defaultdict, OrderedDict
 from itertools import product as cartesianproduct, combinations
 from typing import DefaultDict, Dict, List, Optional, Sequence, cast, Type
 
@@ -22,7 +22,9 @@ from .simulator_opts import PandemicSimOpts
 __all__ = ['PandemicSim', 'make_locations']
 
 
-def make_locations(sim_config: PandemicSimConfig, name: Optional[UserString]=None) -> List[Location]:
+def make_locations(sim_config: PandemicSimConfig, name:UserString) -> List[Location]:
+    if name is None:
+        name = "loc_"
     return [config.location_type(loc_id=name+f'{config.location_type.__name__}_{i}',
                                  init_state=config.location_type.state_type(**config.state_opts),
                                  **config.extra_opts)  # type: ignore
@@ -40,9 +42,10 @@ class PandemicSim:
     _contact_tracer: Optional[ContactTracer]
     _new_time_slot_interval: SimTimeInterval
     _infection_update_interval: SimTimeInterval
+    _critical_threshold: int
     _infection_threshold: int
-    _infection_threshold_i: int
     _numpy_rng: np.random.RandomState
+    _random_init_population: bool
 
     _type_to_locations: DefaultDict
     _hospital_ids: List[LocationID]
@@ -58,8 +61,8 @@ class PandemicSim:
                  new_time_slot_interval: SimTimeInterval = SimTimeInterval(day=1),
                  infection_update_interval: SimTimeInterval = SimTimeInterval(day=1),
                  person_routine_assignment: Optional[PersonRoutineAssignment] = None,
-                 infection_threshold: int = 0,
-                 infection_threshold_i: int = 0):
+                 critical_threshold: int = 0,
+                 infection_threshold: int = 0,):
         """
         :param locations: A sequence of Location instances.
         :param persons: A sequence of Person instances.
@@ -87,8 +90,8 @@ class PandemicSim:
         self._contact_tracer = contact_tracer
         self._new_time_slot_interval = new_time_slot_interval
         self._infection_update_interval = infection_update_interval
+        self._critical_threshold = critical_threshold
         self._infection_threshold = infection_threshold
-        self._infection_threshold_i = infection_threshold_i
 
         self._type_to_locations = defaultdict(list)
         for loc in locations:
@@ -123,7 +126,7 @@ class PandemicSim:
     def from_config(cls: Type['PandemicSim'],
                     sim_config: PandemicSimConfig,
                     sim_opts: PandemicSimOpts = PandemicSimOpts(),
-                    name: Optional[UserString]=None) -> 'PandemicSim':
+                    name: Optional[UserString] = None) -> 'PandemicSim':
         """
         Creates an instance using config
 
@@ -162,8 +165,8 @@ class PandemicSim:
                            infection_model=infection_model,
                            pandemic_testing=pandemic_testing,
                            contact_tracer=contact_tracer,
+                           critical_threshold=sim_opts.critical_threshold,
                            infection_threshold=sim_opts.infection_threshold,
-                           infection_threshold_i=sim_opts.infection_threshold_i,
                            person_routine_assignment=sim_config.person_routine_assignment)
 
     @property
@@ -318,9 +321,9 @@ class PandemicSim:
 
             self._state.global_infection_summary = global_infection_summary
         self._state.critical_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.CRITICAL]
-                                                 >= self._infection_threshold)
+                                                 >= self._critical_threshold)
         self._state.infected_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.INFECTED]
-                                                 >= self._infection_threshold_i)
+                                                 >= self._infection_threshold)
 
         self._state.global_location_summary = self._registry.global_location_summary
 
@@ -389,7 +392,7 @@ class PandemicSim:
 
         return self._state
 
-    def reset(self) -> None:
+    def reset(self, random, seed) -> None:
         for location in self._id_to_location.values():
             location.reset()
         for person in self._id_to_person.values():
