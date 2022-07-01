@@ -32,6 +32,8 @@ class PandemicGymEnv(gym.Env):
     _show_gis: bool
     _random_init_population: bool
     _seed: int
+    _set_state: bool
+    _init_state: dict
 
     _last_observation: np.array
     _last_state: np.array
@@ -59,6 +61,8 @@ class PandemicGymEnv(gym.Env):
                  initial_stage = 0,
                  random_init_population = False,
                  seed = 0,
+                 set_state = False,
+                 state = {}
                  ):
         """
         :param pandemic_sim: Pandemic simulator instance
@@ -72,6 +76,7 @@ class PandemicGymEnv(gym.Env):
         :param show_gis: boolean for whether the gis is included in observation
         :param show_day: boolean for whether the current day (integer) is included in observation
         :param flags: list containing strings of flags used in observation
+        :param state: initial state can be set using this. Uses same keys as index_dict. to set gts must also set gis in real life try add estimate as gis
         """
         self._pandemic_sim = pandemic_sim
         self._stage_to_regulation = {reg.stage: reg for reg in pandemic_regulations}
@@ -82,6 +87,8 @@ class PandemicGymEnv(gym.Env):
         self._done_fn = done_fn
         self._critic_true_state = critic_true_state
         self._seed = 0
+        self._set_state = set_state
+        self._init_state = state
 
         self.action_space = gym.spaces.Discrete(len(self._stage_to_regulation))
 
@@ -142,15 +149,19 @@ class PandemicGymEnv(gym.Env):
         self.observation_space = gym.spaces.Discrete(obs_index)        
         self.state_space = gym.spaces.Discrete(state_index)
 
-        state = np.zeros(self._state_size)
-        state[self.state_index_dict['stage']] = initial_stage
-        state[self.state_index_dict['gis']:self.state_index_dict['gis'] + len(sorted_infection_summary)] = list(self._pandemic_sim.state.global_infection_summary.values())
-        state[self.state_index_dict['gts']:self.state_index_dict['gts'] + len(sorted_infection_summary)] = list(self._pandemic_sim.state.global_testing_state.summary.values())
-        state[self.state_index_dict['critical_flag']] = self._pandemic_sim.state.critical_above_threshold
-        state[self.state_index_dict['infected_flag']] = self._pandemic_sim.state.infected_above_threshold
-        state[self.state_index_dict['day']] = self._pandemic_sim.state.sim_time.day
-        self._last_state = state
-        self._last_observation = PandemicGymEnv.state2obs(self, state)
+        istate = np.zeros(self._state_size)
+        if 'stage' in state.keys():
+            istate[self.state_index_dict['stage']] = state['stage']
+        else:
+            istate[self.state_index_dict['stage']] = initial_stage
+        if 'gis' in state.keys():
+        istate[self.state_index_dict['gis']:self.state_index_dict['gis'] + len(sorted_infection_summary)] = list(self._pandemic_sim.state.global_infection_summary.values())
+        istate[self.state_index_dict['gts']:self.state_index_dict['gts'] + len(sorted_infection_summary)] = list(self._pandemic_sim.state.global_testing_state.summary.values())
+        istate[self.state_index_dict['critical_flag']] = self._pandemic_sim.state.critical_above_threshold
+        istate[self.state_index_dict['infected_flag']] = self._pandemic_sim.state.infected_above_threshold
+        istate[self.state_index_dict['day']] = self._pandemic_sim.state.sim_time.day
+        self._last_state = istate
+        self._last_observation = PandemicGymEnv.state2obs(self, istate)
     
         
         
@@ -169,7 +180,9 @@ class PandemicGymEnv(gym.Env):
                     flags: list = ["critical"],
                     initial_stage = 0,
                     random_init_population = False,
-                    seed = 0) -> 'PandemicGymEnv':
+                    seed = 0,
+                    set_state = False,
+                    state = dict,) -> 'PandemicGymEnv':
         """
         Creates an instance using config
 
@@ -217,7 +230,9 @@ class PandemicGymEnv(gym.Env):
                             flags=flags,
                             initial_stage=initial_stage,
                             random_init_population = random_init_population,
-                            seed = seed,)
+                            seed = seed,
+                            set_state = set_state,
+                            state = state)
 
     @property
     def pandemic_sim(self) -> PandemicSim:
