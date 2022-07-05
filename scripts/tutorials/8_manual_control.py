@@ -29,13 +29,16 @@ def run_pandemic_gym_env() -> None:
     # run stage-0 action steps in the environment
     env.reset()
     print('''Welcome to Tutorial 1.
-    You will manually change the stage of response to the simulated pandemic.''')
-    for i in trange(120, desc='Simulating day'):
-        env.print_obs()
-        if i>9 and i%10==0:
-            viz.plot()
-            sim_viz.plot()
-        action = input('Enter a Stage number from 0-4. 0 is no restrictions, 4 is most strict lockdown.\n')
+    You will manually change the stage of response to the simulated pandemic. Wait till 25%''')
+    for i in trange(40, desc='Simulating day'):
+        if i>30:
+            env.print_obs()
+            if i>9 and i%10==0:
+                viz.plot()
+                sim_viz.plot()
+            action = input('Enter a Stage number from 0-4. 0 is no restrictions, 4 is most strict lockdown.\n')
+        else:
+            action = 0
         obs, reward, done, state, aux = env.step(action=int(action))  # here the action is the discrete regulation stage identifier
         viz.record((state, reward), env.state_index_dict)
         sim_viz.record_state(state = env.pandemic_sim.state, obs=state, index_dict=env.state_index_dict)
