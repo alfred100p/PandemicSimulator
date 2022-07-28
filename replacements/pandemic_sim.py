@@ -41,6 +41,8 @@ class PandemicSim:
     _new_time_slot_interval: SimTimeInterval
     _infection_update_interval: SimTimeInterval
     _infection_threshold: int
+    #add code for threshold
+    
     _numpy_rng: np.random.RandomState
 
     _type_to_locations: DefaultDict

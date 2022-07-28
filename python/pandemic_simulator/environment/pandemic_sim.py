@@ -2,6 +2,7 @@
 
 from collections import defaultdict, OrderedDict
 from itertools import product as cartesianproduct, combinations
+from logging import critical
 from typing import DefaultDict, Dict, List, Optional, Sequence, cast, Type
 
 import numpy as np
@@ -41,7 +42,6 @@ class PandemicSim:
     _new_time_slot_interval: SimTimeInterval
     _infection_update_interval: SimTimeInterval
     _infection_threshold: int
-    _critical_threshold: int
     _numpy_rng: np.random.RandomState
 
     _type_to_locations: DefaultDict
@@ -58,8 +58,7 @@ class PandemicSim:
                  new_time_slot_interval: SimTimeInterval = SimTimeInterval(day=1),
                  infection_update_interval: SimTimeInterval = SimTimeInterval(day=1),
                  person_routine_assignment: Optional[PersonRoutineAssignment] = None,
-                 infection_threshold: int = 0,
-                 critical_threshold: int = 0):
+                 infection_threshold: int = 0):
         """
         :param locations: A sequence of Location instances.
         :param persons: A sequence of Person instances.
@@ -88,7 +87,6 @@ class PandemicSim:
         self._new_time_slot_interval = new_time_slot_interval
         self._infection_update_interval = infection_update_interval
         self._infection_threshold = infection_threshold
-        self._critical_threshold = critical_threshold
 
         self._type_to_locations = defaultdict(list)
         for loc in locations:
@@ -116,7 +114,6 @@ class PandemicSim:
             sim_time=SimTime(),
             regulation_stage=0,
             infection_above_threshold=False,
-            critical_above_threshold=False
         )
 
     @classmethod
@@ -162,7 +159,6 @@ class PandemicSim:
                            pandemic_testing=pandemic_testing,
                            contact_tracer=contact_tracer,
                            infection_threshold=sim_opts.infection_threshold,
-                           critical_threshold=sim_opts.critical_threshold,
                            person_routine_assignment=sim_config.person_routine_assignment)
 
     @property
@@ -318,8 +314,6 @@ class PandemicSim:
             self._state.global_infection_summary = global_infection_summary
         self._state.infection_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.INFECTED]
                                                  >= self._infection_threshold)
-        self._state.critical_above_threshold = (self._state.global_testing_state.summary[InfectionSummary.CRITICAL]
-                                                 >= self._critical_threshold)
         self._state.global_location_summary = self._registry.global_location_summary
 
         if self._contact_tracer and self._new_time_slot_interval.trigger_at_interval(self._state.sim_time):
@@ -409,5 +403,4 @@ class PandemicSim:
             sim_time=SimTime(),
             regulation_stage=0,
             infection_above_threshold=False,
-            critical_above_threshold=False
         )
