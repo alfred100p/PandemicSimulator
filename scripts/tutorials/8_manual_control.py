@@ -29,8 +29,7 @@ def run_pandemic_gym_env() -> None:
     # run stage-0 action steps in the environment
     env.reset()
     Reward = 0
-    print('''Welcome to Tutorial 1.
-    You will manually change the stage of response to the simulated pandemic. Wait till 75%''')
+    print('''You will manually change the stage of response to the simulated pandemic. Wait till 75%''')
 
     #Once you feel more comfortable change 30->100 and 40->120
     for i in trange(40, desc='Simulating day'):

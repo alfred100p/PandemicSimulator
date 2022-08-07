@@ -40,21 +40,21 @@ def run_pandemic_gym_env() -> None:
                 viz.plot()
                 sim_viz.plot()
                 
-#######################################################################################################################################            
-#Replace the code in this if else statement with your own policy based on observation
+            #######################################################################################################################################            
+            #Replace the code in the below if-else statement with your own policy, based on observation variables
             if obs.time_day[...,0]>20:
                 action = 1
             elif not obs.infection_above_threshold:
                 action = 0
             else:
                 action = -1
+            ########################################################################################################################################
 
         obs, reward, done, aux = wrap.step(action=int(action))  # here the action is the discrete regulation stage identifier
         print(obs)
         Reward += reward
         viz.record((obs, reward))
         sim_viz.record_state(state = wrap.env.pandemic_sim.state)
-########################################################################################################################################
     # generate plots
     viz.plot()
     sim_viz.plot()

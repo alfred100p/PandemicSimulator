@@ -43,42 +43,24 @@ def run_pandemic_gym_env() -> None:
         Reward = 0
         for i in trange(120, desc='Simulating day'):
             
-            
             if i==0:
                 action = 0 
 
             else:                
-    #######################################################################################################################################            
-    #Replace the code in this if else statement with your own policy based on observation
-                '''
-                Access Infected flag (number of TESTED infected people >10): obs.infection_above_threshold[...,0]
-                Access Stage: obs.stage[...,0]
-                Access Day: obs.time_day[...,0]
-                Access Not Infected Population(based on testing): obs.global_testing_state[...,3]
-                Access Infected Population(based on testing): obs.global_testing_state[...,2]
-                Access Critical Population(based on testing): obs.global_testing_state[...,0]
-                Access Dead Population(based on testing): obs.global_testing_state[...,1]
-                Access Recovered Population(based on testing): obs.global_testing_state[...,4]
-
-                action = 1 increases current stage by 1
-                action = 0 maintains current stage
-                action = -1 decreases current stage by 1
-
-                DO NOT ACCESS obs.global_infected_state as it doesnt reflect the real world scenario.
-                '''
+                #######################################################################################################################################            
+                #Replace the code in the below if-else statement with your own policy
                 if obs.time_day[...,0]>20:
                     action = 1
                 elif not obs.infection_above_threshold:
                     action = 0
                 else:
                     action = -1
-
+                ########################################################################################################################################
             obs, reward, done, aux = wrap.step(action=int(action))  # here the action is the discrete regulation stage identifier
             print(obs)
             Reward += reward
             viz[j].record((obs, reward))
             sim_viz[j].record_state(state = wrap.env.pandemic_sim.state)
-    ########################################################################################################################################
         # generate plots
         
         print('Reward:'+str(Reward))
