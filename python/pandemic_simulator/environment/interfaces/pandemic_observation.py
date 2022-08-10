@@ -40,6 +40,7 @@ class PandemicObservation:
                                    global_testing_summary=np.zeros((history_size, 1, len(InfectionSummary))),
                                    stage=np.zeros((history_size, 1, 1)),
                                    infection_above_threshold=np.zeros((history_size, 1, 1)),
+                                   time_day=np.zeros((history_size, 1, 1)),
                                    unlocked_non_essential_business_locations=np.zeros((history_size, 1,
                                                                                        num_non_essential_business))
                                    if num_non_essential_business is not None else None)
