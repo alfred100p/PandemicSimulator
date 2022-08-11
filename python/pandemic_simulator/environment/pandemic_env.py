@@ -2,6 +2,7 @@
 from typing import List, Optional, Dict, Tuple, Mapping, Type, Sequence
 
 import gym
+import numpy as np
 
 from .done import DoneFunction
 from .interfaces import LocationID, PandemicObservation, NonEssentialBusinessLocationState, PandemicRegulation, \
@@ -176,6 +177,17 @@ class PandemicGymEnv3Act(gym.ActionWrapper):
         self.env = env
 
         self.action_space = gym.spaces.Discrete(3, start=-1)
+        obs_upper_lim = 1000
+        days=1000
+        # self.observation_space = gym.spaces.Dict(dict(
+        #                               global_infection_summary=gym.spaces.MultiDiscrete(np.ones(shape=(1, 1, 5))*obs_upper_lim, dtype=np.float32),
+        #                               global_testing_summary=gym.spaces.MultiDiscrete(np.ones(shape=(1, 1, 5))*obs_upper_lim, dtype=np.float32),
+        #                               stage=gym.spaces.MultiDiscrete(np.ones(shape=(1, 1, 1))*4, dtype=np.float32),
+        #                               infection_above_threshold=gym.spaces.MultiDiscrete(np.ones(shape=(1, 1, 1)), dtype=np.float32),
+        #                               time_day=gym.spaces.MultiDiscrete(np.ones(shape=(1, 1, 1))*days, dtype=np.float32),
+        #                               # unlocked_non_essential_business_locations=None, # what to do about this? is the list variable length?
+        #                               ))
+        self.observation_space = gym.spaces.MultiDiscrete(np.ones(shape=(1, 1, 5+5+1+1+1))*obs_upper_lim, dtype=np.float32)
 
     @classmethod
     def from_config(self,
@@ -195,11 +207,27 @@ class PandemicGymEnv3Act(gym.ActionWrapper):
         return PandemicGymEnv3Act(env=env)
 
     def step(self, action):
-        return self.env.step(int(self.action(action)))
+        state, reward, done, info = self.env.step(int(self.action(action)))
+        flattened_state = np.concatenate([state.global_infection_summary,
+                                          state.global_testing_summary,
+                                          state.stage,
+                                          state.infection_above_threshold,
+                                          state.time_day
+                                          # unlocked_non_essential_business_locations is always none so it is excluded
+            ], axis=-1)
+        return flattened_state, reward, done, info
 
     def action(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
         return min(4, max(0, self.env._last_observation.stage[-1, 0, 0] + action)) 
     
     def reset(self):
-        self.env.reset()
+        state = self.env.reset()
+        flattened_state = np.concatenate([state.global_infection_summary,
+                                          state.global_testing_summary,
+                                          state.stage,
+                                          state.infection_above_threshold,
+                                          state.time_day
+                                          # unlocked_non_essential_business_locations is always none so it is excluded
+            ], axis=-1)
+        return flattened_state
